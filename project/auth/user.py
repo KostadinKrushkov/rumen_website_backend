@@ -43,11 +43,5 @@ class User(UserMixin):
     @staticmethod
     def decode_auth_token(auth_token):
         """Validates the auth token"""
-
-        # try:
         payload = jwt.decode(auth_token, SECRET_KEY, algorithms=["HS256"])
         return payload['sub']
-        # except jwt.ExpiredSignatureError:  # TODO enable when SSL is added
-        #     return 'Signature expired. Please log in again.'
-        # except jwt.InvalidTokenError:
-        #     return 'Invalid token. Please log in again.'

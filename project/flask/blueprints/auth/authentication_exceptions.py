@@ -16,3 +16,7 @@ class MissingAuthToken(Exception):
 
 class InvalidAuthToken(Exception):
     pass
+
+
+class InvalidRecaptchaException(Exception):
+    pass

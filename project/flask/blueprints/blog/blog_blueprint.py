@@ -66,7 +66,7 @@ def add_blog():
             response = BasicResponse(status=ResponseConstants.FAILURE,
                                      message=ResponseConstants.POST_BLOG_FAIL_DUPLICATE,
                                      status_code=StatusCodes.BAD_REQUEST)
-    except Exception:
+    except Exception as e:
         response = BasicResponse(status=ResponseConstants.FAILURE,
                                  message=ResponseConstants.POST_BLOG_FAIL,
                                  status_code=StatusCodes.BAD_REQUEST)

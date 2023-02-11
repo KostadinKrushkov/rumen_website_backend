@@ -5,10 +5,11 @@ from project.auth.user import User
 from project.common.constants import ResponseConstants, StatusCodes
 from project.database.dtos.user_dto import UserDTO
 from project.database.gateways.user_gateway import UserGateway
-from project.flask.blueprints.auth.authentication_exceptions import PasswordDoesNotMatchException, UserNotFoundException, \
-    IncorrectFormData
+from project.flask.blueprints.auth.authentication_exceptions import PasswordDoesNotMatchException, \
+    UserNotFoundException, \
+    IncorrectFormData, InvalidRecaptchaException
 from project.flask.blueprints.auth.authentication_utils import does_hash_match_pass, hash_pass, \
-    set_cors_headers_and_token
+    set_cors_headers_and_token, validate_recaptcha
 from project.flask.blueprints.response_objects import AuthenticationResponse
 from project.flask.blueprints.auth.credentials_validator import CredentialsValidator
 
@@ -20,9 +21,14 @@ gateway = UserGateway()
 def register():
     """Normal users can only be registered with this endpoint. To become an admin user either update manually or use the
     user gateway's update method"""
-    user_json = request.get_json()
+    request_data = request.get_json()
+    user_json = request_data.get('user')
+    auth_token = None
 
     try:
+        recaptcha = request_data.get('recaptcha')  # todo add integration/unit tests  for this
+        validate_recaptcha(recaptcha)
+
         if not validator.validate_user_credentials(user_json):
             raise IncorrectFormData(ResponseConstants.INCORRECT_CREDENTIALS_FOR_REGISTER)
 
@@ -35,26 +41,40 @@ def register():
             raise IncorrectFormData(ResponseConstants.ERROR_USER_ALREADY_EXISTS)
 
         new_user = gateway.get_by_username(user_dto.username)
+        login_user(User.from_dto(new_user), remember=True)
 
         # generate the auth token
         auth_token = User.encode_auth_token(new_user.id)
         response = AuthenticationResponse(status='success', message=ResponseConstants.SUCCESSFULLY_REGISTERED,
                                           status_code=StatusCodes.SUCCESSFULLY_CREATED,
                                           token=auth_token)
+    except InvalidRecaptchaException:
+        response = AuthenticationResponse(status='fail',
+                                          message=ResponseConstants.INVALID_RECAPTCHA_ERROR,
+                                          status_code=StatusCodes.BAD_REQUEST)
     except IncorrectFormData as e:
         response = AuthenticationResponse(status='fail', message=str(e), status_code=StatusCodes.BAD_REQUEST)
     except Exception:
         response = AuthenticationResponse(status='fail', message=ResponseConstants.GENERIC_SERVER_ERROR,
                                           status_code=StatusCodes.BAD_REQUEST)
     finally:
-        return make_response(jsonify(response.__dict__), response.status_code)
+        full_response = make_response(jsonify(response.__dict__), response.status_code)
+
+    if auth_token is not None:
+        set_cors_headers_and_token(full_response, auth_token)
+
+    return full_response
 
 
 def login():
-    user_json = request.get_json()
+    request_data = request.get_json()
+    user_json = request_data.get('user')
     auth_token = None
 
     try:
+        recaptcha = request_data.get('recaptcha')  # todo add integration/unit tests  for this
+        validate_recaptcha(recaptcha)
+
         # check if user already exists
         saved_user = gateway.get_by_username(user_json.get('username'))
 
@@ -70,14 +90,18 @@ def login():
         message = ResponseConstants.SUCCESSFULLY_LOGGED_IN_AS_ADMIN \
             if saved_user.is_admin and saved_user.is_verified else ResponseConstants.SUCCESSFULLY_LOGGED_IN  # TODO check if integration tests are working properly for this part
         # TODO to be removed when the ssl problem is fixed so the users can be autheorized correctly
-        message = ResponseConstants.SUCCESSFULLY_LOGGED_IN_AS_ADMIN
-        #
+
+        # message = ResponseConstants.SUCCESSFULLY_LOGGED_IN_AS_ADMIN
         response = AuthenticationResponse(status='success',
                                           message=message,
                                           status_code=StatusCodes.SUCCESS)
     except (UserNotFoundException, PasswordDoesNotMatchException):
         response = AuthenticationResponse(status='fail',
                                           message=ResponseConstants.INCORRECT_CREDENTIALS_FOR_LOGIN,
+                                          status_code=StatusCodes.BAD_REQUEST)
+    except InvalidRecaptchaException:
+        response = AuthenticationResponse(status='fail',
+                                          message=ResponseConstants.INVALID_RECAPTCHA_ERROR,
                                           status_code=StatusCodes.BAD_REQUEST)
     except Exception:
         response = AuthenticationResponse(status='fail',

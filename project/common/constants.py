@@ -31,10 +31,12 @@ class ResponseConstants:
 
     GET_ALL_PICTURES_FAIL = "Internal error, could not get all pictures."
     GET_ALL_PICTURES_SUCCESS = "Successfully retrieved all pictures."
+    GET_ALL_PICTURES_SUCCESS = "Successfully retrieved pictures for home."
     GET_PICTURE_BY_TITLE_SUCCESS = "Successfully retrieved picture."
     GET_PICTURE_WRONG_PARAMETER = "Error, client must supply valid title as parameter."
     GET_PICTURE_BY_TITLE_NOT_FOUND = "Could not get picture, no picture with such title exists."
     GET_PICTURE_BY_TITLE_FAIL = "Internal error, could not get picture by title."
+    GET_PICTURE_FOR_HOME = "Internal error, could not get pictures for home screen."
 
     DELETE_PICTURE_SUCCESS = "Picture deleted successfully."
     DELETE_PICTURE_FAIL = "Internal error, could not delete picture."
@@ -71,7 +73,7 @@ class ResponseConstants:
     INCORRECT_CREDENTIALS_FOR_LOGIN = "Error, email or password are wrong. Please check your details."
     INCORRECT_CREDENTIALS_FOR_REGISTER = "Incorrect user data, please make sure the email, password and username are valid."
     ERROR_USER_ALREADY_EXISTS = "Error, user with such email has already been created."
-    ERROR_USER_IS_NOT_ACTIVE = "Error, this user is not active. Please verify your account via the email your provided."
+    ERROR_USER_IS_NOT_ACTIVE = "Error, this user is not active. Please verify your account via the email you provided."
     ERROR_USER_IS_NOT_AUTHORIZED = "Error, this user is not authorized."
     ERROR_USER_IS_NOT_AUTHENTICATED = "Error, this user is not authenticated."
     GENERIC_SERVER_ERROR = "Some internal error occurred. Please try again."
@@ -79,15 +81,19 @@ class ResponseConstants:
     # SMTP
     SUCCESSFULLY_SENT_EMAIL = "Message sent successfully."
     ERROR_FAILED_TO_SEND_EMAIL = "Some internal error occurred and your message was not sent. Please try again."
+    DAILY_LIMIT_EXCEEDED = "Daily limit for message reached. Please try again tomorrow."
 
     # TOKEN
     MISSING_TOKEN = "Error, authentication token was not provided."
     INVALID_TOKEN = "Error, authentication token is not valid."
-    EXPIRED_TOKEN = "Error, authentication token has expired, please ."
+    EXPIRED_TOKEN = "Error, authentication token has expired, please log in again."
 
     # GENERIC
     SUCCESS = 'success'
     FAILURE = 'fail'
+
+    # RECAPTCHA
+    INVALID_RECAPTCHA_ERROR = "ERROR, reCAPTCHA is not valid, please try again."
 
 
 class StatusCodes:

@@ -1,7 +1,6 @@
 from project.common.constants import SQLConstants
 from project.database.dtos.blog_dto import BlogDTO
 from project.database.gateways.base_gateway import BaseGateway
-from project.flask.blueprints.blog.blog_exceptions import BlogNotFound
 
 
 class BlogGateway(BaseGateway):
@@ -41,15 +40,13 @@ class BlogGateway(BaseGateway):
 INSERT INTO {self.table_name} (title, content, image, created_at, updated_at)
 VALUES ('{blog.title}', '{blog.content}', '{blog.image}', GETDATE(), GETDATE());"""
 
-    # def _update_sql_for_blog(self, blog):
-    #     return f"""EXEC UpdateBlog @title = '{blog.title}', @image = '{blog.image}', @content = '{blog.content}';"""
-
     def _update_sql_for_blog(self, blog):
         return f"""
 UPDATE {self.table_name} 
 SET content = '{blog.content}', image = '{blog.image}', updated_at = GETDATE()
 WHERE title = '{blog.title}';
 """
+
     def _get_sql_for_all_blogs(self):
             return f"""SELECT title, content, image, created_at, updated_at FROM {self.table_name}"""
 

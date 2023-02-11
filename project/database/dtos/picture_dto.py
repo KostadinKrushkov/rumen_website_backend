@@ -1,5 +1,4 @@
 from project.database.dtos.base_dto import BaseDTO
-from project.database.dtos.dto_utils import sql_server_datetime_to_human_readable
 from project.database.gateways.category_gateway import CategoryGateway
 
 
@@ -33,7 +32,5 @@ class PictureDTO(BaseDTO):
         )
 
     def as_frontend_object(self):
-        self.created_at = sql_server_datetime_to_human_readable(self.created_at)
-        self.updated_at = sql_server_datetime_to_human_readable(self.updated_at)
         self.category = CategoryGateway().get_by_id(self.category_id).name
         return self

@@ -2,22 +2,27 @@
 from flask import Blueprint, request, make_response, jsonify
 
 import smtplib, ssl
+
 from project.common.constants import ResponseConstants, StatusCodes
-from project.flask.blueprints.response_objects import BasicResponse
+from project.flask.blueprints.auth.authentication_exceptions import InvalidRecaptchaException
+from project.flask.blueprints.auth.authentication_utils import validate_recaptcha
+from project.flask.blueprints.response_objects import BasicResponse, AuthenticationResponse
 from project.settings import BACKEND_EMAIL, BACKEND_EMAIL_PASS, BUSINESS_EMAIL
 
 
 email_blueprint = Blueprint('email', __name__)
+ping_blueprint = Blueprint('ping', __name__)
 
 
 def send_email_view():
-    # TODO add some kind of protection from abuse e.g. max 100 per day
-    try:
-        payload = request.get_json()
+    request_data = request.get_json()
+    person = request_data.get('name')
+    email = request_data.get('email')
+    message = request_data.get('message')
+    recaptcha = request_data.get('recaptcha')  # todo add integration/unit tests  for this
 
-        person = payload.get('name')
-        email = payload.get('email')
-        message = payload.get('message')
+    try:
+        validate_recaptcha(recaptcha)
 
         subject = f'Message sent from {person} with email {email}'
         full_message = f'Subject: {subject}\n\n{message}\n\nRegards, {person}'
@@ -30,6 +35,10 @@ def send_email_view():
             response = BasicResponse(status=ResponseConstants.FAILURE,
                                      message=ResponseConstants.ERROR_FAILED_TO_SEND_EMAIL,
                                      status_code=StatusCodes.INTERNAL_SERVER_ERROR)
+    except InvalidRecaptchaException:
+        response = AuthenticationResponse(status='fail',
+                                          message=ResponseConstants.INVALID_RECAPTCHA_ERROR,
+                                          status_code=StatusCodes.BAD_REQUEST)
     except Exception:
         response = BasicResponse(status=ResponseConstants.FAILURE,
                                  message=ResponseConstants.POST_PICTURE_FAIL,
@@ -50,4 +59,12 @@ def send_email(message):
     return True
 
 
-email_blueprint.add_url_rule('/email', view_func=send_email_view, methods=['POST'])
+email_blueprint.add_url_rule('/send_email', view_func=send_email_view, methods=['POST'])
+
+
+def ping():
+    return "Ping"
+
+
+ping_blueprint.add_url_rule('/ping', view_func=ping, methods=['GET', 'POST'])
+

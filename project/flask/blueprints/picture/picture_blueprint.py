@@ -14,8 +14,7 @@ gateway = PictureGateway()
 
 def get_all_pictures():
     try:
-        all_pictures = gateway.get_all()
-        serialized_pictures = [picture.as_frontend_object().__dict__ for picture in all_pictures]
+        serialized_pictures = [picture.as_frontend_object().__dict__ for picture in gateway.get_all()]
 
         response = BasicResponse(status=ResponseConstants.SUCCESS,
                                  message=ResponseConstants.GET_ALL_PICTURES_SUCCESS,
@@ -27,6 +26,28 @@ def get_all_pictures():
                                  status_code=StatusCodes.BAD_REQUEST)
     finally:
         return make_response(jsonify(response.__dict__), response.status_code)
+
+
+def get_home_pictures():  # TODO unit or integ test
+    filename = r'project/flask/blueprints/picture/home_displayed_pictures.txt'
+    picture_titles = open(filename).read().splitlines()
+
+    try:
+        home_pictures_dtos = []
+        for picture in [picture.as_frontend_object().__dict__ for picture in gateway.get_all()]:
+            if picture.get('title') in picture_titles:
+                home_pictures_dtos.append(picture)
+
+        response = BasicResponse(status=ResponseConstants.SUCCESS,
+                                 message=ResponseConstants.GET_PICTURE_BY_TITLE_SUCCESS,
+                                 status_code=StatusCodes.SUCCESS,
+                                 json=home_pictures_dtos)
+    except Exception:
+        response = BasicResponse(status=ResponseConstants.FAILURE,
+                                 message=ResponseConstants.GET_PICTURE_FOR_HOME,
+                                 status_code=StatusCodes.INTERNAL_SERVER_ERROR)
+
+    return make_response(jsonify(response.__dict__), response.status_code)
 
 
 def get_picture():
@@ -73,7 +94,7 @@ def add_picture():
         response = BasicResponse(status=ResponseConstants.FAILURE,
                                  message=str(e),
                                  status_code=StatusCodes.NOT_FOUND)
-    except Exception:
+    except Exception as e:
         response = BasicResponse(status=ResponseConstants.FAILURE,
                                  message=ResponseConstants.POST_PICTURE_FAIL,
                                  status_code=StatusCodes.INTERNAL_SERVER_ERROR)
@@ -134,6 +155,7 @@ def delete_picture():
         return make_response(jsonify(response.__dict__), response.status_code)
 
 
+picture_blueprint.add_url_rule('/home/pictures', view_func=get_home_pictures, methods=['GET'])
 picture_blueprint.add_url_rule('/picture', view_func=get_picture, methods=['GET'])
 picture_blueprint.add_url_rule('/picture', view_func=add_picture, methods=['POST'])
 picture_blueprint.add_url_rule('/picture', view_func=update_picture, methods=['PUT'])

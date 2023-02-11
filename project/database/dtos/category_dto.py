@@ -1,5 +1,4 @@
 from project.database.dtos.base_dto import BaseDTO
-from project.database.dtos.dto_utils import sql_server_datetime_to_human_readable
 
 
 class CategoryDTO(BaseDTO):
@@ -27,6 +26,4 @@ class CategoryDTO(BaseDTO):
     def as_frontend_object(self):
         self.enabled = self.enabled == 1
         self.is_subcategory = self.is_subcategory == 1
-        self.created_at = sql_server_datetime_to_human_readable(self.created_at)
-        self.updated_at = sql_server_datetime_to_human_readable(self.updated_at)
         return self
