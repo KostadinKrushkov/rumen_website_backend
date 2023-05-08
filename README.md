@@ -22,6 +22,6 @@ Technologies used for this project
 - Change the domain name to resolve to your static ip -> https://my.eurodns.com/cloud/ssl#_ e.g. rumenplamenovart.com -> 213.91.236.77
 
 # To build and run everything together
-- To update the UI refer to the beforementioned UI repository. In this repository the release version of the angular_frontend_application image needs to be bumped.  
+- To update the UI refer to the beforementioned UI repository. In this repository the release version of the angular_frontend_application image needs to be bumped (i.e. image: 'rocazzar/rumen-plamenov-angular-app:v1.0-release').  
 - docker compose build  -> to build the environments, volumes and images
 - docker compose up -d
