@@ -10,7 +10,7 @@ class UserGateway(BaseGateway):
     def save(self, user):
         try:
             sql = self._insert_sql_for_user(user)
-            return self.db_controller.execute_get_row_count(sql)
+            return self.db_controller.execute_get_row_count(sql) == 1
         except Exception as e:
             if SQLConstants.DUPLICATE_KEY_ERROR in str(e):
                 return None
@@ -18,7 +18,7 @@ class UserGateway(BaseGateway):
 
     def update(self, user):
         sql = self._update_sql_for_user(user)
-        return self.db_controller.execute_get_row_count(sql)
+        return self.db_controller.execute_get_row_count(sql) == 1
 
     def get_by_username(self, username):
         if not username:
@@ -53,11 +53,11 @@ class UserGateway(BaseGateway):
 
     def delete_by_username(self, email):
         sql = self._delete_sql_by_username(email)
-        return self.db_controller.execute_get_row_count(sql)
+        return self.db_controller.execute_get_row_count(sql) == 1
 
     def delete_by_email(self, email):
         sql = self._delete_sql_by_email(email)
-        return self.db_controller.execute_get_row_count(sql)
+        return self.db_controller.execute_get_row_count(sql) == 1
 
     def _insert_sql_for_user(self, user):
         return f"""

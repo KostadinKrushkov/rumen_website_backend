@@ -1,6 +1,9 @@
+import logging
+
 from project.common.constants import SQLConstants
 from project.database.dtos.category_dto import CategoryDTO
 from project.database.gateways.base_gateway import BaseGateway
+from project.flask.blueprints.category.category_exceptions import DuplicateCategoryName
 
 
 class CategoryGateway(BaseGateway):
@@ -10,43 +13,46 @@ class CategoryGateway(BaseGateway):
     def save(self, category):
         try:
             sql = self._insert_sql_for_category(category)
-            return self.db_controller.execute_get_row_count(sql)
+            return self.db_controller.execute_get_row_count(sql) == 1
         except Exception as e:
-            if SQLConstants.DUPLICATE_KEY_ERROR in str(e):
-                return None
+            if SQLConstants.DUPLICATE_KEY_ERROR in str(e):  # it's already saved
+                raise DuplicateCategoryName()
             raise Exception(e)
 
     def update(self, category):
         sql = self._update_sql_for_category(category)
-        return self.db_controller.execute_get_row_count(sql)
+        return self.db_controller.execute_get_row_count(sql) == 1
 
     def get_by_name(self, name):
         sql = self._get_sql_for_category_name(name)
         category_result = self.db_controller.execute_get_response(sql)
-        if not category_result:
-            return None
-        return CategoryDTO(**category_result[0]._mapping).as_frontend_object()
+        return CategoryDTO(**category_result[0]._mapping).as_frontend_object() if category_result else None
 
-    def get_by_id(self, category_id):  # TODO add testing and refactoring
+    def get_by_id(self, category_id):
         sql = self._get_sql_by_category_id(category_id)
         category_result = self.db_controller.execute_get_response(sql)
-        if not category_result:
-            return None
-        return CategoryDTO(**category_result[0]._mapping)
+        return CategoryDTO(**category_result[0]._mapping) if category_result else None
 
     def get_all(self):
-        sql = self._get_sql_for_all_categories()
+        sql = self._get_sql_for_all_categories(enabled_only=False)
+        return self._get_categories(sql)
+
+    def get_enabled(self):
+        sql = self._get_sql_for_all_categories(enabled_only=True)
+        return self._get_categories(sql)
+
+    def _get_categories(self, sql):
         categories = self.db_controller.execute_get_response(sql)
         for category in categories:
             yield CategoryDTO(**category._mapping)
 
     def delete(self, category):
         sql = self._delete_sql_by_category_obj(category)
-        return self.db_controller.execute_get_row_count(sql)
+        return self.db_controller.execute_get_row_count(sql) == 1
 
     def delete_by_name(self, name):
         sql = self._delete_sql_by_category_name(name)
-        return self.db_controller.execute_get_row_count(sql)
+        return self.db_controller.execute_get_row_count(sql) == 1
 
     def _insert_sql_for_category(self, category):
         return f"""
@@ -60,8 +66,12 @@ SET weight = {category.weight}, enabled = {category.enabled}, is_subcategory = {
 WHERE name = '{category.name}';
 """
 
-    def _get_sql_for_all_categories(self):
-        return f"""SELECT id, name, weight, enabled, is_subcategory, created_at, updated_at FROM {self.table_name}"""
+    def _get_sql_for_all_categories(self, enabled_only=False):
+        where_clause = 'WHERE enabled = 1' if enabled_only else ''
+        return f"""
+SELECT id, name, weight, enabled, is_subcategory, created_at, updated_at FROM {self.table_name} 
+{where_clause} 
+ORDER BY weight DESC"""
 
     def _get_sql_for_category_name(self, category_name):
         return f"""SELECT id, name, weight, enabled, is_subcategory, created_at, updated_at

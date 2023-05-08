@@ -10,7 +10,7 @@ class UserDTO(BaseDTO):
         self.is_verified = 1 if is_verified else 0
         self.created_at = created_at
         self.updated_at = updated_at
-        self.id = id
+        self.id = str(id) if id else None
 
     def as_frontend_object(self):
         return self

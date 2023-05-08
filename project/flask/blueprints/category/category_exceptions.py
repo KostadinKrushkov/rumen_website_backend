@@ -4,3 +4,7 @@ class CategoryNotFound(Exception):
 
 class CategoryMissingName(Exception):
     pass
+
+
+class DuplicateCategoryName(Exception):
+    pass

@@ -25,13 +25,19 @@ class ResponseConstants:
     POST_PICTURE_FAIL_DUPLICATE_OR_OTHER = "Failed to insert picture due to duplicate title."
     POST_PICTURE_FAIL = "Internal error, could not save new picture."
 
+    UPDATE_FAVOURITE_PICTURES_SUCCESS = "Favourites updated successfully."
+    UPDATE_FAVOURITE_PICTURES_FAIL = "Failed to update favourites."
+
     UPDATE_PICTURE_SUCCESS = "Picture updated successfully."
     UPDATE_PICTURE_FAIL = "Internal error, could not update picture."
     UPDATE_PICTURE_NOT_FOUND = "No picture with such title exists."
 
     GET_ALL_PICTURES_FAIL = "Internal error, could not get all pictures."
     GET_ALL_PICTURES_SUCCESS = "Successfully retrieved all pictures."
-    GET_ALL_PICTURES_SUCCESS = "Successfully retrieved pictures for home."
+    GET_FAVOURITE_PICTURES_SUCCESS = "Successfully retrieved favourite pictures."
+    GET_FAVOURITE_PICTURES_FAIL = "Failed to retrieve favourite pictures."
+    GET_PICTURE_YEARS_SUCCESS = "Successfully retrieved all distinct years."
+    GET_PICTURE_YEARS_FAIL = "Failed to retrieve distinct years."
     GET_PICTURE_BY_TITLE_SUCCESS = "Successfully retrieved picture."
     GET_PICTURE_WRONG_PARAMETER = "Error, client must supply valid title as parameter."
     GET_PICTURE_BY_TITLE_NOT_FOUND = "Could not get picture, no picture with such title exists."
@@ -52,8 +58,8 @@ class ResponseConstants:
     UPDATE_CATEGORY_NOT_FOUND = "No category with such name exists."
     UPDATE_CATEGORY_FAIL = "Internal error, could not update category."
 
-    GET_ALL_CATEGORIES_SUCCESS = "Successfully retrieved all categories."
-    GET_ALL_CATEGORIES_FAIL = "Internal error, could not get all categories."
+    GET_CATEGORIES_SUCCESS = "Successfully retrieved categories."
+    GET_CATEGORIES_FAIL = "Internal error, could not get categories."
     GET_CATEGORY_BY_NAME_SUCCESS = "Successfully retrieved category."
     GET_CATEGORY_WRONG_PARAMETER = "Error, client must supply valid name as parameter."
     GET_CATEGORY_BY_NAME_NOT_FOUND = "Could not get category, no category with such name exists."
@@ -73,9 +79,9 @@ class ResponseConstants:
     INCORRECT_CREDENTIALS_FOR_LOGIN = "Error, email or password are wrong. Please check your details."
     INCORRECT_CREDENTIALS_FOR_REGISTER = "Incorrect user data, please make sure the email, password and username are valid."
     ERROR_USER_ALREADY_EXISTS = "Error, user with such email has already been created."
-    ERROR_USER_IS_NOT_ACTIVE = "Error, this user is not active. Please verify your account via the email you provided."
-    ERROR_USER_IS_NOT_AUTHORIZED = "Error, this user is not authorized."
-    ERROR_USER_IS_NOT_AUTHENTICATED = "Error, this user is not authenticated."
+    ERROR_USER_IS_NOT_ACTIVE = "Error, the user is not active. Please verify your account via the email you provided."
+    ERROR_USER_IS_NOT_AUTHORIZED = "Error, the user is not authorized."
+    ERROR_USER_IS_NOT_AUTHENTICATED = "Error, the user is not authenticated."
     GENERIC_SERVER_ERROR = "Some internal error occurred. Please try again."
 
     # SMTP
@@ -110,3 +116,17 @@ class StatusCodes:
 
 class SQLConstants:
     DUPLICATE_KEY_ERROR = "duplicate key"
+
+
+class EndpointPaths:
+    SEND_EMAIL = '/send_email'
+    CATEGORY = '/category'
+    BLOG = '/blog'
+    PICTURE = '/picture'
+    PICTURE_YEARS = '/picture/years'
+    HOME_PICTURES = '/home/pictures'
+
+    AUTH = '/auth'
+    REGISTER = '/register'
+    LOGIN = '/login'
+    LOGOUT = '/logout'

@@ -1,11 +1,16 @@
-from flask import Blueprint, request, make_response, jsonify
+import json
+import logging
+
+from flask import Blueprint, request
 from pyodbc import IntegrityError
 
-from project.common.constants import ResponseConstants, StatusCodes
-from project.database.dtos.category_dto import CategoryDTO
+from project.common.constants import ResponseConstants, StatusCodes, EndpointPaths
+from project.common.decorators import jsonify_response
 from project.database.gateways.category_gateway import CategoryGateway
 from project.flask.blueprints.auth.authentication_utils import authorization_required
-from project.flask.blueprints.category.category_exceptions import CategoryNotFound, CategoryMissingName
+from project.flask.blueprints.category.category_blueprint_utils import get_category_dto_from_json
+from project.flask.blueprints.category.category_exceptions import CategoryNotFound, CategoryMissingName, \
+    DuplicateCategoryName
 from project.flask.blueprints.response_objects import BasicResponse
 
 category_blueprint = Blueprint('category', __name__)
@@ -17,25 +22,36 @@ def get_category_by_name(category_name):
 
 
 def get_all_categories():
+    return _get_categories(False)
+
+
+def get_enabled_categories():
+    return _get_categories(True)
+
+
+def _get_categories(enabled_only):
     try:
-        all_categories = gateway.get_all()
-        serialized_categories = [category.__dict__ for category in all_categories]
+        categories = gateway.get_enabled() if enabled_only else gateway.get_all()
+        serialized_categories = [category.__dict__ for category in categories]
         response = BasicResponse(status=ResponseConstants.SUCCESS,
-                                 message=ResponseConstants.GET_ALL_CATEGORIES_SUCCESS,
+                                 message=ResponseConstants.GET_CATEGORIES_SUCCESS,
                                  status_code=StatusCodes.SUCCESSFULLY_CREATED,
                                  json=serialized_categories)
-        return make_response(jsonify(response.__dict__), response.status_code)
-    except Exception:
+    except Exception as e:
+        logging.error(f'Getting all categories failed with exception "{e}".')
         response = BasicResponse(status=ResponseConstants.FAILURE,
-                                 message=ResponseConstants.GET_ALL_CATEGORIES_FAIL,
+                                 message=ResponseConstants.GET_CATEGORIES_FAIL,
                                  status_code=StatusCodes.BAD_REQUEST)
-        return make_response(jsonify(response.__dict__), response.status_code)
+    return response
 
 
+@jsonify_response
 def get_category():
     name = request.args.get('name')
+    enabled_only = request.args.get('enabled_only', default=False, type=json.loads)
+
     if not name:
-        return get_all_categories()
+        return get_enabled_categories() if enabled_only else get_all_categories()
 
     try:
         category = get_category_by_name(name)
@@ -54,45 +70,40 @@ def get_category():
         response = BasicResponse(status=ResponseConstants.FAILURE,
                                  message=ResponseConstants.GET_CATEGORY_BY_NAME_FAIL,
                                  status_code=StatusCodes.BAD_REQUEST)
-    finally:
-        return make_response(jsonify(response.__dict__), response.status_code)
+    return response
 
 
 @authorization_required
 def add_category():
-    try:
-        category_json = request.get_json()
-        category = CategoryDTO(name=category_json['name'],
-                               weight=category_json['weight'],
-                               enabled=category_json['enabled'],
-                               is_subcategory=category_json['is_subcategory'])
+    category_json = request.get_json()
 
-        if gateway.save(category) == 1:
-            response = BasicResponse(status=ResponseConstants.SUCCESS,
-                                     message=ResponseConstants.POST_CATEGORY_SUCCESS,
-                                     status_code=StatusCodes.SUCCESSFULLY_CREATED)
-        else:
-            response = BasicResponse(status=ResponseConstants.FAILURE,
-                                     message=ResponseConstants.POST_CATEGORY_FAIL_DUPLICATE_OR_OTHER,
-                                     status_code=StatusCodes.BAD_REQUEST)
+    try:
+        category = get_category_dto_from_json(category_json)
+
+        gateway.save(category)
+        response = BasicResponse(status=ResponseConstants.SUCCESS,
+                                 message=ResponseConstants.POST_CATEGORY_SUCCESS,
+                                 status_code=StatusCodes.SUCCESSFULLY_CREATED)
+    except DuplicateCategoryName:
+        logging.error(f'Failed to save category as there was already an existing category with name {category_json.get("name")}')
+        response = BasicResponse(status=ResponseConstants.FAILURE,
+                                 message=ResponseConstants.POST_CATEGORY_FAIL_DUPLICATE_OR_OTHER,
+                                 status_code=StatusCodes.BAD_REQUEST)
     except Exception:
         response = BasicResponse(status=ResponseConstants.FAILURE,
                                  message=ResponseConstants.POST_CATEGORY_FAIL,
                                  status_code=StatusCodes.BAD_REQUEST)
-    finally:
-        return make_response(jsonify(response.__dict__), response.status_code)
+    return response
 
 
 @authorization_required
 def update_category():
-    try:
-        category_json = request.get_json()
-        category = CategoryDTO(name=category_json['name'],
-                               weight=category_json['weight'],
-                               enabled=category_json['enabled'],
-                               is_subcategory=category_json['is_subcategory'])
+    category_json = request.get_json()
 
-        if gateway.update(category) == 1:
+    try:
+        category = get_category_dto_from_json(category_json)
+
+        if gateway.update(category):
             response = BasicResponse(status=ResponseConstants.SUCCESS,
                                      message=ResponseConstants.UPDATE_CATEGORY_SUCCESS,
                                      status_code=StatusCodes.SUCCESSFULLY_CREATED)
@@ -104,8 +115,7 @@ def update_category():
         response = BasicResponse(status=ResponseConstants.FAILURE,
                                  message=ResponseConstants.UPDATE_CATEGORY_FAIL,
                                  status_code=StatusCodes.BAD_REQUEST)
-    finally:
-        return make_response(jsonify(response.__dict__), response.status_code)
+    return response
 
 
 @authorization_required
@@ -115,7 +125,7 @@ def delete_category():
         if not category_name:
             raise CategoryMissingName()
 
-        if gateway.delete_by_name(category_name) == 1:
+        if gateway.delete_by_name(category_name):
             response = BasicResponse(status=ResponseConstants.SUCCESS,
                                      message=ResponseConstants.DELETE_CATEGORY_SUCCESS,
                                      status_code=StatusCodes.SUCCESS)
@@ -135,11 +145,10 @@ def delete_category():
         response = BasicResponse(status=ResponseConstants.FAILURE,
                                  message=ResponseConstants.DELETE_CATEGORY_FAIL,
                                  status_code=StatusCodes.BAD_REQUEST)
-    finally:
-        return make_response(jsonify(response.__dict__), response.status_code)
+    return response
 
 
-category_blueprint.add_url_rule('/category', view_func=get_category, methods=['GET'])
-category_blueprint.add_url_rule('/category', view_func=add_category, methods=['POST'])
-category_blueprint.add_url_rule('/category', view_func=update_category, methods=['PUT'])
-category_blueprint.add_url_rule('/category', view_func=delete_category, methods=['DELETE'])
+category_blueprint.add_url_rule(EndpointPaths.CATEGORY, view_func=get_category, methods=['GET'])
+category_blueprint.add_url_rule(EndpointPaths.CATEGORY, view_func=add_category, methods=['POST'])
+category_blueprint.add_url_rule(EndpointPaths.CATEGORY, view_func=update_category, methods=['PUT'])
+category_blueprint.add_url_rule(EndpointPaths.CATEGORY, view_func=delete_category, methods=['DELETE'])

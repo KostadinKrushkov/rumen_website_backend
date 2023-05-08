@@ -10,3 +10,7 @@ def sanitize_sql(func):
         sanitized_sql = text(sql)
         return func(sanitized_sql)
     return wrapper
+
+
+def sanitize_param_for_apostrophies(param):
+    return param.replace("'", "''")

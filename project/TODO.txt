@@ -1,20 +1,15 @@
-TODO Find a way to generate SAFE certificates -> Make sure they are safe
-TODO find out how to compress images on UI side -> research compression
-TODO refactor the gateways to reduce duplication
-TODO add integration tests for the authorization_required wrapper part for the token
 
 Possible Improvements:
-- add logging
+- find out how to compress images on UI side -> research compression
 - add api call to send email on forgotten password (perhaps 5 times a day max to avoid abuse)
 - check if speed of register validation can be improved
 - find a way to store the picture as a blog/varbinary instead of base64 plain text -> would decrease storage and is considered the proper way to do it
 *https://stackoverflow.com/questions/9722603/storing-image-in-database-directly-or-as-base64-data#:~:text=While%20base64%20is%20fine%20for,over%20a%20raw%20binary%20format.
 
-
+X Find a way to generate SAFE certificates -> Make sure they are safe
 X add authorization testing and setup admin user in client
 X add sanitization to each call - find out where is the best place to do it (sql sanitization method is added in the controller as wrapper)
 X change the way i get data from jsons (dicts) form ['asdf'] to .get('asdf')
-X find out what the csrf was meant to do and how to remove it after finishing the authorization
 X research a good way to make a user an admin user so its safe
 X add authorization
 X standardize the response of the api
@@ -29,5 +24,14 @@ X Add stored procedures for all POST queries so the clients gets result if tryin
 * Not necessary, I could check how many rows are matched (count)
 X Make sure the deletes work with the row count change
 X Fill postman api book to for testing
+X refactor the gateways to reduce duplication
+X Add logging
+X create an endpoint to update the list of home screen images that are shown
+X find out what the csrf was meant to do and how to remove it after finishing the authorization -> It's not necessary for this simple website
+X add sanitizing on apostrophoes for picture, blogs and categories
+X add integration tests for the authorization_required wrapper part for the token
+X make documentation for how to run this in dev mode and how to release
+X make getting pictures and blogs work in batches
+
 
 ALT + SHIFT + G to put cursors on selected lines

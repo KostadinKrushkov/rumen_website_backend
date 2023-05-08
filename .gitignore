@@ -1,3 +1,5 @@
 /setup/
+/project/git_ignored_temp/
+/.vscode/
 /venv/
-/git_ignored_temp/
+/.pytest_cache/

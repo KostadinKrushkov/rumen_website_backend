@@ -1,6 +1,6 @@
 import datetime
 import jwt
-from project.settings import SECRET_KEY, EXPIRATION_DATETIME_DELTA
+from project.settings import Config
 from flask_login import UserMixin
 
 
@@ -12,7 +12,10 @@ class User(UserMixin):
         self.registered_on = datetime.datetime.now()
         self.is_admin = is_admin == 1
         self.is_verified = is_verified == 1
-        self.id = id
+        self.id = str(id) if id else None
+
+    def get_id(self):
+        return self.id
 
     @classmethod
     def from_dto(cls, user_dto):
@@ -28,13 +31,13 @@ class User(UserMixin):
         """Generates the Auth Token"""
         try:
             payload = {
-                'exp': datetime.datetime.utcnow() + EXPIRATION_DATETIME_DELTA,
+                'exp': datetime.datetime.utcnow() + Config.EXPIRATION_DATETIME_DELTA,
                 'iat': datetime.datetime.utcnow(),
                 'sub': user_id
             }
             return jwt.encode(
                 payload,
-                SECRET_KEY,
+                Config.SECRET_KEY,
                 algorithm='HS256'
             )
         except Exception as e:
@@ -43,5 +46,5 @@ class User(UserMixin):
     @staticmethod
     def decode_auth_token(auth_token):
         """Validates the auth token"""
-        payload = jwt.decode(auth_token, SECRET_KEY, algorithms=["HS256"])
+        payload = jwt.decode(auth_token, Config.SECRET_KEY, algorithms=["HS256"])
         return payload['sub']

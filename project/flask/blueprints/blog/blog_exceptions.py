@@ -4,3 +4,7 @@ class BlogNotFound(Exception):
 
 class BlogMissingTitle(Exception):
     pass
+
+
+class DuplicateBlogTitle(Exception):
+    pass

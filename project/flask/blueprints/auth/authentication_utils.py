@@ -1,19 +1,20 @@
+import sys
 import requests
-
 import jwt
-from flask import make_response, jsonify, request
+import bcrypt as bcr
+from flask import request
 from flask_login import current_user, logout_user
 from functools import wraps
-import bcrypt as bcr
 from sqlalchemy.exc import ProgrammingError
 
 from project.auth.user import User
 from project.common.constants import ResponseConstants, StatusCodes
+from project.common.decorators import disable_during_tests, generated_jsonified_response
 from project.database.gateways.user_gateway import UserGateway
 from project.flask.blueprints.auth.authentication_exceptions import InvalidAuthToken, MissingAuthToken, \
     InvalidRecaptchaException
-from project.flask.blueprints.response_objects import AuthenticationResponse
-from project.settings import VERIFY_RECAPTCHA_URL, RECAPTCHA_SECRET_KEY
+from project.flask.blueprints.response_objects import BasicResponse
+from project.settings import Config
 
 
 def hash_pass(password):
@@ -31,12 +32,13 @@ def does_hash_match_pass(hashed_pass, password):
     return encoded_hash == bcr.hashpw(encoded_pass, encoded_hash)
 
 
-def set_cors_headers_and_token(response, token):
+def set_cors_headers_and_token(response, token, token_name='token', httponly=True):
     response.headers['Access-Control-Allow-Origin'] = 'https://localhost:4200'
     response.headers['Access-Control-Allow-Credentials'] = 'true'
     response.headers['Access-Control-Request-Headers'] = 'X-Requested-With, accept, content-type'
-    response.headers['Access-Control-Allow-Methods'] = 'GET, POST'
-    response.set_cookie('token', token, httponly=True, samesite='None', secure=True)
+    response.headers['Access-Control-Allow-Headers'] = 'X-Requested-With, accept, content-type'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, OPTIONS'
+    response.set_cookie(token_name, token, httponly=httponly, samesite='None', secure=True, path='/')
 
 
 def validate_token_get_response_on_fail():
@@ -50,17 +52,17 @@ def validate_token_get_response_on_fail():
         if not UserGateway().get_by_id(user_id):
             raise InvalidAuthToken()
     except MissingAuthToken:
-        response = AuthenticationResponse(status='fail',
-                                          message=ResponseConstants.MISSING_TOKEN,
-                                          status_code=StatusCodes.UNAUTHENTICATED)
+        response = BasicResponse(status=ResponseConstants.FAILURE,
+                                 message=ResponseConstants.MISSING_TOKEN,
+                                 status_code=StatusCodes.UNAUTHENTICATED)
     except (jwt.ExpiredSignatureError, ProgrammingError):
-        response = AuthenticationResponse(status='fail',
-                                          message=ResponseConstants.EXPIRED_TOKEN,
-                                          status_code=StatusCodes.INVALID_TOKEN)
+        response = BasicResponse(status=ResponseConstants.FAILURE,
+                                 message=ResponseConstants.EXPIRED_TOKEN,
+                                 status_code=StatusCodes.INVALID_TOKEN)
     except (InvalidAuthToken, jwt.InvalidTokenError):
-        response = AuthenticationResponse(status='fail',
-                                          message=ResponseConstants.INVALID_TOKEN,
-                                          status_code=StatusCodes.INVALID_TOKEN)
+        response = BasicResponse(status=ResponseConstants.FAILURE,
+                                 message=ResponseConstants.INVALID_TOKEN,
+                                 status_code=StatusCodes.INVALID_TOKEN)
     if response is not None:
         logout_user()
     return response
@@ -72,33 +74,36 @@ def authorization_required(func):
         response = validate_token_get_response_on_fail()
 
         if response is not None:
-            return make_response(jsonify(response.__dict__), response.status_code)
+            return generated_jsonified_response(response)
 
-        # TODO enable it and test it when you add ssl
         if not current_user.is_authenticated:
-            response = AuthenticationResponse(status='fail',
-                                              message=ResponseConstants.ERROR_USER_IS_NOT_AUTHENTICATED,
-                                              status_code=StatusCodes.UNAUTHENTICATED)
+            response = BasicResponse(status=ResponseConstants.FAILURE,
+                                     message=ResponseConstants.ERROR_USER_IS_NOT_AUTHENTICATED,
+                                     status_code=StatusCodes.UNAUTHENTICATED)
         elif not current_user.is_verified:
-            response = AuthenticationResponse(status='fail',
-                                              message=ResponseConstants.ERROR_USER_IS_NOT_ACTIVE,
-                                              status_code=StatusCodes.UNAUTHORIZED)
+            response = BasicResponse(status=ResponseConstants.FAILURE,
+                                     message=ResponseConstants.ERROR_USER_IS_NOT_ACTIVE,
+                                     status_code=StatusCodes.UNAUTHORIZED)
         elif not current_user.is_admin:
-            response = AuthenticationResponse(status='fail',
-                                              message=ResponseConstants.ERROR_USER_IS_NOT_AUTHORIZED,
-                                              status_code=StatusCodes.UNAUTHORIZED)
+            response = BasicResponse(status=ResponseConstants.FAILURE,
+                                     message=ResponseConstants.ERROR_USER_IS_NOT_AUTHORIZED,
+                                     status_code=StatusCodes.UNAUTHORIZED)
         else:
-            return func()
-        return make_response(jsonify(response.__dict__), response.status_code)
+            response = func()
+        return generated_jsonified_response(response)
 
     return wrapper
 
 
+@disable_during_tests
 def validate_recaptcha(recaptcha):
+    if getattr(sys, '_called_from_test', False):
+        return
+
     recaptcha_response = None
     if recaptcha:
-        recaptcha_response = requests.post(url=VERIFY_RECAPTCHA_URL,
-                                           data={'secret': RECAPTCHA_SECRET_KEY, 'response': recaptcha})
+        recaptcha_response = requests.post(url=Config.VERIFY_RECAPTCHA_URL,
+                                           data={'secret': Config.RECAPTCHA_SECRET_KEY, 'response': recaptcha})
 
-    if not recaptcha_response or recaptcha_response.status_code != 200:
+    if not recaptcha_response or recaptcha_response.status_code != StatusCodes.SUCCESS:
         raise InvalidRecaptchaException()

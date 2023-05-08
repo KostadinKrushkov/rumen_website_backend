@@ -1,0 +1,34 @@
+version: '3.1'
+services:
+  flask_backend_server:
+    container_name: flask_backend_server
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./setup/sql_server_env.list
+    stdin_open: true
+    tty: true
+  mysql_server:
+    container_name: mysql_server
+    env_file:
+      - ./setup/sql_server_env.list
+    ports:
+      - '1433:1433'
+    volumes:
+      - 'sqlvolume:/var/opt/mssql'
+    image: 'mcr.microsoft.com/mssql/server:2019-latest'
+  angular_frontend_application:
+    container_name: angular_frontend_application
+    image: 'rocazzar/rumen-plamenov-angular-app:v5-release'
+    ports:
+      - 80:80
+      - 443:443
+    restart: always
+    volumes:
+      - ./project/git_ignored_temp/official_rumenplamenovart.com-2023-02-09.pem:/etc/nginx/certs/official_rumenplamenovart.com-2023-02-09.pem:ro
+      - ./project/git_ignored_temp/rumenplamenovart.com-2023-02-09.key:/etc/nginx/certs/rumenplamenovart.com-2023-02-09.key:ro
+volumes:
+  sqlvolume:

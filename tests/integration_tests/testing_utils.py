@@ -7,7 +7,7 @@ def _format_response_to_dict(response):
     return formatted_response
 
 
-def _assert_response_matches_expected(response, code, status, message):
+def assert_response_matches_expected(response, code, status, message):
     assert response['status_code'] == code
     assert response['status'] == status
     assert response['message'] == message
