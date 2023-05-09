@@ -3,7 +3,7 @@ import logging
 from flask import Blueprint, request
 
 from project.common.constants import ResponseConstants, StatusCodes, EndpointPaths
-from project.common.decorators import jsonify_response
+from project.common.decorators import jsonify_response, log_execution_time
 from project.database.gateways.picture_gateway import PictureGateway
 from project.flask.blueprints.auth.authentication_utils import authorization_required
 from project.flask.blueprints.category.category_exceptions import CategoryNotFound
@@ -39,6 +39,7 @@ def get_pictures():
 
 
 @jsonify_response
+@log_execution_time
 def get_home_pictures():
     picture_titles = open(Config.HOME_PICTURES_PATH).read().splitlines()
 
@@ -61,6 +62,7 @@ def get_home_pictures():
 
 
 @jsonify_response
+@log_execution_time
 def get_picture():
     title = request.args.get('title')
     if not title:
@@ -87,6 +89,7 @@ def get_picture():
 
 
 @jsonify_response
+@log_execution_time
 def get_picture_years():
     try:
         years = [row['year'] for row in gateway.get_distinct_picture_years()]
@@ -163,7 +166,7 @@ def update_favourite_pictures():
     filename = Config.HOME_PICTURES_PATH
 
     try:
-        with open(filename, 'w') as file:
+        with open(filename, 'w+') as file:
             file.writelines('\n'.join([picture['title'] for picture in pictures_json]))
         response = BasicResponse(status=ResponseConstants.SUCCESS,
                                  message=ResponseConstants.UPDATE_FAVOURITE_PICTURES_SUCCESS,

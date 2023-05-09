@@ -22,7 +22,7 @@ services:
     image: 'mcr.microsoft.com/mssql/server:2019-latest'
   angular_frontend_application:
     container_name: angular_frontend_application
-    image: 'rocazzar/rumen-plamenov-angular-app:v1.0-release'
+    image: 'rocazzar/rumen-plamenov-angular-app:v1.1-release'
     ports:
       - 80:80
       - 443:443

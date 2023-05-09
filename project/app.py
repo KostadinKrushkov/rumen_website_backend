@@ -9,7 +9,6 @@ from flask_limiter.util import get_remote_address
 
 from project.auth.user import User
 from project.common.constants import ResponseConstants
-from project.database.connection import init_session
 from project.database.database_manager import DatabaseManager
 from project.database.gateways.user_gateway import UserGateway
 from project.extensions import (
@@ -33,10 +32,16 @@ def create_app(config_object=Config):
 
     register_extensions(app)
     register_blueprints(app)
+    initial_file_creation()
 
     limiter = Limiter(get_remote_address, app=app)
     limiter.limit(Config.SMTP_REQUESTS_LIMIT, error_message=ResponseConstants.DAILY_LIMIT_EXCEEDED)(email_blueprint)
     return app
+
+
+def initial_file_creation():
+    with open(Config.HOME_PICTURES_PATH, 'a') as file:
+        file.writelines('')
 
 
 def register_extensions(app):
@@ -62,8 +67,6 @@ def register_blueprints(app):
 
 
 app = create_app()
-# with app.app_context():
-#     init_session()
 
 
 if __name__ == "__main__":
