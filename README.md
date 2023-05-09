@@ -1,5 +1,5 @@
 # Rumen Plamenov art gallery REST API
-_Visit rumenplamenovart.com to see final result_
+_Visit [rumenplamenovart.com](https://rumenplamenovart.com/) to see final result_
 
 This repo is the REST API for the art gallery website including the database design.
 To view the UI code, you can visit https://github.com/KostadinKrushkov/art_gallery_website
