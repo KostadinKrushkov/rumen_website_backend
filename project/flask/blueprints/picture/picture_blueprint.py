@@ -31,7 +31,7 @@ def get_pictures():
                                  message=ResponseConstants.GET_ALL_PICTURES_SUCCESS,
                                  status_code=StatusCodes.SUCCESS,
                                  json=serialized_pictures)
-    except Exception:
+    except Exception as e:
         response = BasicResponse(status=ResponseConstants.FAILURE,
                                  message=ResponseConstants.GET_ALL_PICTURES_FAIL,
                                  status_code=StatusCodes.BAD_REQUEST)

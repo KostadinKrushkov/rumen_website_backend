@@ -1,0 +1,26 @@
+version: '3.1'
+services:
+  flask_backend_server:
+    container_name: flask_backend_server
+    image: 'rumen_website_backend-flask_backend_server'
+    ports:
+      - "5000:5000"
+    stdin_open: true
+    tty: true
+  mysql_server:
+    container_name: mysql_server
+    ports:
+      - '1433:1433'
+    volumes:
+      - 'sqlvolume:/var/opt/mssql'
+    image: 'mcr.microsoft.com/mssql/server'
+  angular_frontend_application:
+    container_name: angular_frontend_application
+    image: 'rocazzar/rumen-plamenov-angular-app:v1.1-release'
+    ports:
+      - 80:80
+      - 443:443
+    restart: always
+volumes:
+  # for some reason the volume created on the target machine is using the dir name :docker_release_scripts_sqlvolume" find a way to change it TODO
+  sqlvolume:

@@ -1,3 +1,5 @@
+- Write a proper compose file for the release on the target machine
+- Make sure that exporting and importing the containers would result in a valid network
 
 Possible Improvements:
 - find out how to compress images on UI side -> research compression
@@ -32,6 +34,9 @@ X add sanitizing on apostrophoes for picture, blogs and categories
 X add integration tests for the authorization_required wrapper part for the token
 X make documentation for how to run this in dev mode and how to release
 X make getting pictures and blogs work in batches
-
+X Add database automated backups
+X Test sending containers to remote server
+X Fix problem with registration with complex passwords
+X Clean the unneeded images in docker (docker prune)
 
 ALT + SHIFT + G to put cursors on selected lines

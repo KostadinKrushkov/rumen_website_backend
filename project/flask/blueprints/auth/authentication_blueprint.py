@@ -1,3 +1,5 @@
+import logging
+
 from flask import Blueprint, request, make_response, jsonify
 from flask_login import login_user, logout_user, login_required
 
@@ -52,7 +54,7 @@ def register():
                                  status_code=StatusCodes.BAD_REQUEST)
     except IncorrectFormData as e:
         response = BasicResponse(status=ResponseConstants.FAILURE, message=str(e), status_code=StatusCodes.BAD_REQUEST)
-    except Exception:
+    except Exception as e:
         response = BasicResponse(status=ResponseConstants.FAILURE, message=ResponseConstants.GENERIC_SERVER_ERROR,
                                  status_code=StatusCodes.BAD_REQUEST)
     finally:
@@ -68,6 +70,7 @@ def login():
     request_data = request.get_json()
     user_json = request_data.get('user')
     auth_token = None
+    response = None
 
     try:
         recaptcha = request_data.get('recaptcha')
@@ -104,6 +107,7 @@ def login():
                                  message=ResponseConstants.GENERIC_SERVER_ERROR,
                                  status_code=StatusCodes.BAD_REQUEST)
     finally:
+        logging.debug(f'Login request for user: {user_json.get("username")}, response {response}')
         full_response = make_response(jsonify(response.__dict__), response.status_code)
 
     # ### Used for development due to problems with not using domain name

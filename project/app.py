@@ -75,5 +75,5 @@ if __name__ == "__main__":
 
     if should_reset:
         DatabaseManager(app).reset_database()
-
-    app.run(debug=Config.DEBUG, host='0.0.0.0', port=5000, ssl_context=(Config.CERT_PATH, Config.CERT_KEY_PATH))
+    else:
+        app.run(debug=Config.DEBUG, host='0.0.0.0', port=5000, ssl_context=(Config.CERT_PATH, Config.CERT_KEY_PATH))
