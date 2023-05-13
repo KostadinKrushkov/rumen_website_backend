@@ -19,5 +19,3 @@ class BlogDTO(BaseDTO):
             updated_at=blog_dict.get('updated_at')
         )
 
-    def as_frontend_object(self):
-        return self

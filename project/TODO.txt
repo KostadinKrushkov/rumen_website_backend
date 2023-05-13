@@ -1,5 +1,6 @@
 - Write a proper compose file for the release on the target machine
 - Make sure that exporting and importing the containers would result in a valid network
+- Remove the file handling for the favourite pictures in /home, add a separate table in the database
 
 Possible Improvements:
 - find out how to compress images on UI side -> research compression

@@ -21,18 +21,16 @@ def get_category_by_name(category_name):
     return gateway.get_by_name(category_name)
 
 
-def get_all_categories():
-    return _get_categories(False)
-
-
-def get_enabled_categories():
-    return _get_categories(True)
-
-
-def _get_categories(enabled_only):
+def get_categories(enabled_only):
     try:
-        categories = gateway.get_enabled() if enabled_only else gateway.get_all()
-        serialized_categories = [category.__dict__ for category in categories]
+        serialized_categories = []
+        for category in gateway.get_all():
+            if enabled_only:
+                if category.enabled:
+                    serialized_categories.append(category.__dict__)
+            else:
+                serialized_categories.append(category.__dict__)
+
         response = BasicResponse(status=ResponseConstants.SUCCESS,
                                  message=ResponseConstants.GET_CATEGORIES_SUCCESS,
                                  status_code=StatusCodes.SUCCESSFULLY_CREATED,
@@ -51,7 +49,7 @@ def get_category():
     enabled_only = request.args.get('enabled_only', default=False, type=json.loads)
 
     if not name:
-        return get_enabled_categories() if enabled_only else get_all_categories()
+        return get_categories(enabled_only)
 
     try:
         category = get_category_by_name(name)

@@ -1,3 +1,5 @@
+from functools import lru_cache
+
 from project.common.constants import SQLConstants
 from project.database.dtos.picture_dto import PictureDTO
 from project.database.gateways.base_gateway import BaseGateway
@@ -8,7 +10,13 @@ class PictureGateway(BaseGateway):
     table_name = "picture"
     model = PictureDTO
 
+    def clear_cache(self):
+        self.get_all.cache_clear()
+        self.get_distinct_picture_years.cache_clear()
+
     def save(self, picture):
+        super(PictureGateway, self).save(picture)
+
         try:
             sql = self._insert_sql_for_picture(picture)
             return self.db_controller.execute_get_row_count(sql) == 1
@@ -18,9 +26,12 @@ class PictureGateway(BaseGateway):
             raise Exception(e)
 
     def update(self, picture):
+        super(PictureGateway, self).update(picture)
+
         sql = self._update_sql_for_picture(picture)
         return self.db_controller.execute_get_row_count(sql) == 1
 
+    @lru_cache()
     def get_distinct_picture_years(self):
         sql = self._get_sql_distinct_years_from_pictures()
         return self.db_controller.execute_get_response(sql)
@@ -31,12 +42,15 @@ class PictureGateway(BaseGateway):
         picture_dto = PictureDTO.from_row(found_picture)
         return picture_dto.as_frontend_object() if picture_dto is not None else None
 
+    @lru_cache(maxsize=None)
     def get_all(self):
         sql = self._get_sql_for_all_pictures()
-        picture_results = self.db_controller.execute_get_response(sql)
-        for picture in picture_results:
-            yield PictureDTO(**picture._mapping)
+        picture_results = []
+        for picture in self.db_controller.execute_get_response(sql):
+            picture_results.append(PictureDTO(**picture._mapping))
+        return picture_results
 
+    # deprecated in favor of caching all and filtering in code
     def get_pictures(self, categories, years, limit=None, cursor_picture_title=None):
         conditions = ['c.enabled = 1']
 
@@ -65,10 +79,14 @@ ORDER BY p.created_at DESC
             yield PictureDTO(**picture._mapping)
 
     def delete(self, picture):
+        super(PictureGateway, self).delete(picture)
+
         sql = self._delete_sql_by_picture_obj(picture)
         return self.db_controller.execute_get_row_count(sql) == 1
 
     def delete_by_title(self, title):
+        self.clear_cache()
+
         sql = self._delete_sql_by_picture_title(title)
         return self.db_controller.execute_get_row_count(sql) == 1
 
@@ -89,7 +107,7 @@ SET description = '{picture.description}', category_id = '{picture.category_id}'
 
     def _get_sql_for_all_pictures(self):
         return f"""
-SELECT p.title, p.description, p.category_id, c.name as category, p.image, p.created_at, p.updated_at FROM {self.table_name} p
+SELECT p.title, p.description, p.category_id, c.name as category, p.image, p.created_at, p.updated_at, p.id FROM {self.table_name} p
 JOIN category c ON c.id = p.category_id"""
 
     def _get_sql_for_picture_title(self, picture_title):

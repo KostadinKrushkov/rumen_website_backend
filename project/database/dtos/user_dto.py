@@ -12,5 +12,3 @@ class UserDTO(BaseDTO):
         self.updated_at = updated_at
         self.id = str(id) if id else None
 
-    def as_frontend_object(self):
-        return self

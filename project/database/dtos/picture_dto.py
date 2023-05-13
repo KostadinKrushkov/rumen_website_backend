@@ -2,12 +2,13 @@ from project.database.dtos.base_dto import BaseDTO
 
 
 class PictureDTO(BaseDTO):
-    def __init__(self, title, description, category_id, category, image, created_at=None, updated_at=None):
+    def __init__(self, title, description, category_id, category, image, id=None, created_at=None, updated_at=None):
         self.title = title
         self.description = description
         self.category_id = category_id
         self.category = category
         self.image = image
+        self.id = id
         self.created_at = created_at
         self.updated_at = updated_at
 
@@ -28,9 +29,7 @@ class PictureDTO(BaseDTO):
             category_id=picture_dict.get('category_id'),
             category=picture_dict.get('category'),
             image=picture_dict.get('image'),
+            id=picture_dict.get('id'),
             created_at=picture_dict.get('created_at'),
             updated_at=picture_dict.get('updated_at'),
         )
-
-    def as_frontend_object(self):
-        return self

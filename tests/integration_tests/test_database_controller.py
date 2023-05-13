@@ -38,5 +38,6 @@ class TestDatabaseController:
             table_name='blog', title="newest title", content='newest content', image='newest image')
         assert len(list(self.blog_gateway.get_all())) == 0
 
-        assert None == DatabaseController.execute(insert_blog_query)
+        assert None is DatabaseController.execute(insert_blog_query)
+        self.blog_gateway.clear_cache()
         assert len(list(self.blog_gateway.get_all())) == 1

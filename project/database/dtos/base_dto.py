@@ -12,3 +12,6 @@ class BaseDTO:
             return dict(year=value.year, month=value.month, day=value.day, hour=value.hour, minute=value.minute, second=value.second)
         else:
             return value.__dict__
+
+    def as_frontend_object(self):
+        return self

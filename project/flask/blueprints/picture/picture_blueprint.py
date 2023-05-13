@@ -23,15 +23,22 @@ def get_pictures():
     limit = int(request.args.get('limit', Config.NUM_PICTURES_TO_EXTEND_LOAD))
 
     try:
-        serialized_pictures = [picture.as_frontend_object().__dict__ for picture in
-                               gateway.get_pictures(categories=categories, years=years,
-                                                    cursor_picture_title=cursor_picture_title, limit=limit)]
+        serialized_pictures = []
+        passed_cursor_picture = False if cursor_picture_title else True
+        for picture in gateway.get_all():
+            if not categories or picture.category in categories:
+                if not years or picture.created_at in years:
+                    if len(serialized_pictures) < limit and passed_cursor_picture:
+                        serialized_pictures.append(picture.as_frontend_object().__dict__)
+
+            if picture.title == cursor_picture_title:
+                passed_cursor_picture = True
 
         response = BasicResponse(status=ResponseConstants.SUCCESS,
                                  message=ResponseConstants.GET_ALL_PICTURES_SUCCESS,
                                  status_code=StatusCodes.SUCCESS,
                                  json=serialized_pictures)
-    except Exception as e:
+    except Exception:
         response = BasicResponse(status=ResponseConstants.FAILURE,
                                  message=ResponseConstants.GET_ALL_PICTURES_FAIL,
                                  status_code=StatusCodes.BAD_REQUEST)
