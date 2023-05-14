@@ -8,7 +8,7 @@ from project.flask.blueprints.picture.picture_exceptions import DuplicatePicture
 
 class PictureGateway(BaseGateway):
     table_name = "picture"
-    model = PictureDTO
+    dto_class = PictureDTO
 
     def clear_cache(self):
         self.get_all.cache_clear()
@@ -39,7 +39,7 @@ class PictureGateway(BaseGateway):
     def get_by_title(self, title):
         sql = self._get_sql_for_picture_title(title)
         found_picture = self.db_controller.execute_get_response(sql)
-        picture_dto = PictureDTO.from_row(found_picture)
+        picture_dto = self.dto_class.from_row(found_picture)
         return picture_dto.as_frontend_object() if picture_dto is not None else None
 
     @lru_cache(maxsize=None)
@@ -47,7 +47,7 @@ class PictureGateway(BaseGateway):
         sql = self._get_sql_for_all_pictures()
         picture_results = []
         for picture in self.db_controller.execute_get_response(sql):
-            picture_results.append(PictureDTO(**picture._mapping))
+            picture_results.append(self.dto_class(**picture._mapping))
         return picture_results
 
     # deprecated in favor of caching all and filtering in code
@@ -76,7 +76,7 @@ ORDER BY p.created_at DESC
 """
 
         for picture in self.db_controller.execute_get_response(sql):
-            yield PictureDTO(**picture._mapping)
+            yield self.dto_class(**picture._mapping)
 
     def delete(self, picture):
         super(PictureGateway, self).delete(picture)

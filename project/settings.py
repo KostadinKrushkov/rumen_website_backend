@@ -4,7 +4,8 @@ import os
 
 class Config:
     DEBUG = True
-    DEVELOPMENT_FLAG = False
+    DEVELOPMENT_FLAG = True
+
     STATIC_IP_ADDRESS = os.environ.get('STATIC_ADDRESS')
     BACKEND_EMAIL = os.environ.get('BACKEND_EMAIL')
     BUSINESS_EMAIL = os.environ.get('BUSINESS_EMAIL')
@@ -27,12 +28,9 @@ class Config:
     EXPIRATION_DATETIME_DELTA = datetime.timedelta(days=31, seconds=3)
     PERMANENT_SESSION_LIFETIME = datetime.timedelta(days=31)  # The length of a user log in session
     REMEMBER_COOKIE_DURATION = PERMANENT_SESSION_LIFETIME
-    NUM_PICTURES_TO_EXTEND_LOAD = 18
+    NUM_PICTURES_TO_EXTEND_LOAD = 9
     GMAIL_PORT = 465
 
     SESSION_COOKIE_SECURE = True
     SESSION_PERMANENT = True
     REMEMBER_COOKIE_SECURE = True
-    HOME_PICTURES_PATH = 'project/flask/blueprints/picture/home_displayed_pictures.txt' if DEVELOPMENT_FLAG else 'home_displayed_pictures.txt'
-    TEST_HOME_PICTURES_PATH = r'/test_home_displayed_pictures.txt'
-    TESTING_FILES = (TEST_HOME_PICTURES_PATH, )

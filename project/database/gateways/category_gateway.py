@@ -8,7 +8,7 @@ from project.flask.blueprints.category.category_exceptions import DuplicateCateg
 
 class CategoryGateway(BaseGateway):
     table_name = "category"
-    model = CategoryDTO
+    dto_class = CategoryDTO
 
     def clear_cache(self):
         self.get_all.cache_clear()
@@ -33,12 +33,12 @@ class CategoryGateway(BaseGateway):
     def get_by_name(self, name):
         sql = self._get_sql_for_category_name(name)
         category_result = self.db_controller.execute_get_response(sql)
-        return CategoryDTO(**category_result[0]._mapping).as_frontend_object() if category_result else None
+        return self.dto_class(**category_result[0]._mapping).as_frontend_object() if category_result else None
 
     def get_by_id(self, category_id):
         sql = self._get_sql_by_category_id(category_id)
         category_result = self.db_controller.execute_get_response(sql)
-        return CategoryDTO(**category_result[0]._mapping) if category_result else None
+        return self.dto_class(**category_result[0]._mapping) if category_result else None
 
     @lru_cache(maxsize=None)
     def get_all(self):
@@ -48,7 +48,7 @@ class CategoryGateway(BaseGateway):
     def _get_categories(self, sql):
         categories = []
         for category in self.db_controller.execute_get_response(sql):
-            categories.append(CategoryDTO(**category._mapping))
+            categories.append(self.dto_class(**category._mapping))
         return categories
 
     def delete(self, category):

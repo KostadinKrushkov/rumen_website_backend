@@ -1,11 +1,11 @@
 import logging
 
-from flask import Blueprint, request, make_response, jsonify
+from flask import Blueprint, request
 from flask_login import login_user, logout_user, login_required
 
 from project.auth.user import User
 from project.common.constants import ResponseConstants, StatusCodes, EndpointPaths
-from project.database.dtos.user_dto import UserDTO
+from project.common.decorators import generated_jsonified_response
 from project.database.gateways.user_gateway import UserGateway
 from project.flask.blueprints.auth.authentication_exceptions import IncorrectFormData, InvalidRecaptchaException, \
     UserNotFoundException, PasswordDoesNotMatchException
@@ -25,6 +25,7 @@ def register():
     request_data = request.get_json()
     user_json = request_data.get('user')
     auth_token = None
+    response = None
 
     try:
         recaptcha = request_data.get('recaptcha')
@@ -34,9 +35,9 @@ def register():
             raise IncorrectFormData(ResponseConstants.INCORRECT_CREDENTIALS_FOR_REGISTER)
 
         user_json['password'] = hash_pass(user_json.get('password'))
-        user_dto = UserDTO(email=user_json.get('email').lower(),
-                           username=user_json.get('username'),
-                           password=user_json.get('password'))
+        user_dto = gateway.dto_class(email=user_json.get('email').lower(),
+                                     username=user_json.get('username'),
+                                     password=user_json.get('password'))
 
         if gateway.save(user_dto) != 1:
             raise IncorrectFormData(ResponseConstants.ERROR_USER_ALREADY_EXISTS)
@@ -58,7 +59,7 @@ def register():
         response = BasicResponse(status=ResponseConstants.FAILURE, message=ResponseConstants.GENERIC_SERVER_ERROR,
                                  status_code=StatusCodes.BAD_REQUEST)
     finally:
-        full_response = make_response(jsonify(response.__dict__), response.status_code)
+        full_response = generated_jsonified_response(response)
 
     if auth_token is not None:
         set_cors_headers_and_token(full_response, auth_token)
@@ -108,7 +109,7 @@ def login():
                                  status_code=StatusCodes.BAD_REQUEST)
     finally:
         logging.debug(f'Login request for user: {user_json.get("username")}, response {response}')
-        full_response = make_response(jsonify(response.__dict__), response.status_code)
+        full_response = generated_jsonified_response(response)
 
     # ### Used for development due to problems with not using domain name
     # saved_user = gateway.get_by_username(user_json.get('username'))
@@ -120,7 +121,7 @@ def login():
     # response = BasicResponse(status='success',
     #                          message=message,
     #                          status_code=StatusCodes.SUCCESS)
-    # full_response = make_response(jsonify(response.__dict__), response.status_code)
+    # full_response = generated_jsonified_response(response)
     # ###
 
     if auth_token is not None:
@@ -133,7 +134,7 @@ def login():
 def logout():
     logout_user()
     response = BasicResponse(ResponseConstants.SUCCESS, ResponseConstants.SUCCESSFULLY_LOGGED_OUT, StatusCodes.SUCCESS)
-    return make_response(jsonify(response.__dict__), response.status_code)
+    return generated_jsonified_response(response)
 
 
 auth_blueprint.add_url_rule(EndpointPaths.REGISTER, view_func=register, methods=['POST'])

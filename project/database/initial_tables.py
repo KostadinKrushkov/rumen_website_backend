@@ -31,6 +31,16 @@ picture_table = """
     FOREIGN KEY(category_id) REFERENCES category(id));
 """
 
+favourite_pictures_table = """
+    CREATE TABLE favourite_pictures (
+    id INT IDENTITY PRIMARY KEY,
+    picture_id INT NOT NULL,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL,
+    FOREIGN KEY(picture_id) REFERENCES picture(id)
+    );
+"""
+
 users_table = """
 CREATE TABLE users (
 id INT IDENTITY PRIMARY KEY,
@@ -73,6 +83,7 @@ values (@title, @description, @category, convert(varbinary, @image), GETDATE(), 
 GO
 """
 
+drop_favourite_pictures_table = """DROP TABLE IF EXISTS favourite_pictures"""
 drop_table_picture = "DROP TABLE IF EXISTS picture"""
 drop_table_blog = "DROP TABLE IF EXISTS blog"""
 drop_table_category = "DROP TABLE IF EXISTS category"""
@@ -81,6 +92,7 @@ drop_table_users = """DROP TABLE IF EXISTS users"""
 stored_procedures_dict = {'InsertPicture': insert_picture_procedure}
 
 # Order matters due to foreign key constraint
-tables_to_create_in_order = [users_table, blog_table, category_table, picture_table]
-tables_to_delete_in_order = [drop_table_picture, drop_table_blog, drop_table_category, drop_table_users]
+tables_to_create_in_order = [users_table, blog_table, category_table, picture_table, favourite_pictures_table]
+tables_to_delete_in_order = [drop_favourite_pictures_table, drop_table_picture, drop_table_blog, drop_table_category,
+                             drop_table_users]
 

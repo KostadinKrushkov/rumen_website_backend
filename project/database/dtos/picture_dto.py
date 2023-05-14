@@ -21,9 +21,9 @@ class PictureDTO(BaseDTO):
 
         return cls.from_dict(row_dict)
 
-    @staticmethod
-    def from_dict(picture_dict):
-        return PictureDTO(
+    @classmethod
+    def from_dict(cls, picture_dict):
+        return cls(
             title=picture_dict.get('title'),
             description=picture_dict.get('description'),
             category_id=picture_dict.get('category_id'),

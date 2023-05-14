@@ -8,7 +8,7 @@ from project.flask.blueprints.blog.blog_exceptions import DuplicateBlogTitle
 
 class BlogGateway(BaseGateway):
     table_name = "blog"
-    model = BlogDTO
+    dto_class = BlogDTO
 
     def clear_cache(self):
         self.get_all.cache_clear()
@@ -33,14 +33,14 @@ class BlogGateway(BaseGateway):
     def get_by_title(self, title):
         sql = self._get_sql_for_blog_title(title)
         results = self.db_controller.execute_get_response(sql)
-        return BlogDTO(**results[0]._mapping) if results else None
+        return self.dto_class(**results[0]._mapping) if results else None
 
     @lru_cache(maxsize=None)
     def get_all(self):
         sql = self._get_sql_for_all_blogs()
         blog_results = []
         for blog in self.db_controller.execute_get_response(sql):
-            blog_results.append(BlogDTO(**blog))
+            blog_results.append(self.dto_class(**blog))
         return blog_results
 
     def delete_by_title(self, title):

@@ -2,6 +2,7 @@ import sys
 import logging
 
 from flask import Flask
+from flask_compress import Compress
 from flask_cors import CORS
 
 from flask_limiter import Limiter
@@ -28,25 +29,20 @@ logging.basicConfig(format='%(asctime)s | %(levelname)s | %(message)s', level=lo
 def create_app(config_object=Config):
     app = Flask(__name__)
     app.config.from_object(config_object)
-    CORS(app, supports_credentials=True)
 
     register_extensions(app)
     register_blueprints(app)
-    initial_file_creation()
 
     limiter = Limiter(get_remote_address, app=app)
     limiter.limit(Config.SMTP_REQUESTS_LIMIT, error_message=ResponseConstants.DAILY_LIMIT_EXCEEDED)(email_blueprint)
     return app
 
 
-def initial_file_creation():
-    with open(Config.HOME_PICTURES_PATH, 'a') as file:
-        file.writelines('')
-
-
 def register_extensions(app):
+    CORS(app, supports_credentials=True)
     bcrypt.init_app(app)
     login_manager.init_app(app)
+    Compress(app)
 
     @login_manager.user_loader
     def load_user(user_id):

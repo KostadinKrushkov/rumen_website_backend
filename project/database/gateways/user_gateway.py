@@ -5,7 +5,7 @@ from project.database.gateways.base_gateway import BaseGateway
 
 class UserGateway(BaseGateway):
     table_name = "users"
-    model = UserDTO
+    dto_class = UserDTO
 
     def save(self, user):
         try:
@@ -29,7 +29,7 @@ class UserGateway(BaseGateway):
 
         if not result:
             return None
-        return UserDTO(**dict(result[0]))
+        return self.dto_class(**dict(result[0]))
 
     def get_by_id(self, user_id):
         if not user_id:
@@ -40,13 +40,13 @@ class UserGateway(BaseGateway):
 
         if not result:
             return None
-        return UserDTO(**dict(result[0]))
+        return self.dto_class(**dict(result[0]))
 
     def get_all(self):
         sql = self._get_sql_for_all_users()
         user_results = self.db_controller.execute_get_response(sql)
         for user in user_results:
-            yield UserDTO(**dict(user))
+            yield self.dto_class(**dict(user))
 
     def delete(self, user):
         return self.delete_by_username(user.username)

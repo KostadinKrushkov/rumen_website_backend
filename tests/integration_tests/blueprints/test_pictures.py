@@ -5,6 +5,7 @@ from unittest.mock import patch
 from project.common.constants import ResponseConstants, StatusCodes
 from project.database.dtos.picture_dto import PictureDTO
 from project.database.gateways.category_gateway import CategoryGateway
+from project.database.gateways.favourite_pictures_gateway import FavouritePicturesGateway
 from project.database.gateways.picture_gateway import PictureGateway
 from project.settings import Config
 from tests.integration_tests.blueprints.test_categories import stub_category_name, stubbed_category
@@ -69,49 +70,6 @@ class TestPicturesAPI:
             assert_response_matches_expected(response, code=StatusCodes.INTERNAL_SERVER_ERROR,
                                              status=ResponseConstants.FAILURE,
                                              message=ResponseConstants.GET_PICTURE_BY_TITLE_FAIL)
-
-    def test_get_home_pictures_fails_on_internal_error(self, client):
-        mock_config = mock.Mock()
-        mock_config.HOME_PICTURES_PATH = Config.TEST_HOME_PICTURES_PATH
-        mock_config.SECRET_KEY = Config.SECRET_KEY
-
-        error_mock = mock.Mock()
-        error_mock.side_effect = Exception
-
-        with patch('project.flask.blueprints.picture.picture_blueprint.Config', mock_config):
-            with patch.object(PictureGateway, 'get_all', error_mock):
-                response = send_get_home_pictures(client)
-                assert_response_matches_expected(response, code=StatusCodes.INTERNAL_SERVER_ERROR,
-                                                 status=ResponseConstants.FAILURE,
-                                                 message=ResponseConstants.GET_FAVOURITE_PICTURES_FAIL)
-
-    def test_update_home_pictures_and_get_them_successfully(self, authorized_client, client):
-        mock_config = mock.Mock()
-        mock_config.HOME_PICTURES_PATH = Config.TEST_HOME_PICTURES_PATH
-        mock_config.SECRET_KEY = Config.SECRET_KEY
-
-        stub_picture2 = stub_picture.copy()
-        stub_picture2['title'] = 'Damn skyr has a lot of protein'
-        pictures = [stub_picture, stub_picture2]
-        picture_titles = [stub_picture['title'], stub_picture2['title']]
-
-        create_category_and_send_post_picture_request(client, stub_picture, stubbed_category)
-        send_post_picture_request(authorized_client, stub_picture2)
-
-        with patch('project.flask.blueprints.picture.picture_blueprint.Config', mock_config):
-            response = send_update_home_pictures(authorized_client, pictures)
-            assert_response_matches_expected(response, code=StatusCodes.SUCCESSFULLY_CREATED,
-                                             status=ResponseConstants.SUCCESS,
-                                             message=ResponseConstants.UPDATE_FAVOURITE_PICTURES_SUCCESS)
-
-            response = send_get_home_pictures(client)
-
-            assert len(response['json']) == 2
-            assert response['json'][0]['title'] in picture_titles
-            assert response['json'][1]['title'] in picture_titles
-
-            assert_response_matches_expected(response, code=StatusCodes.SUCCESS, status=ResponseConstants.SUCCESS,
-                                             message=ResponseConstants.GET_FAVOURITE_PICTURES_SUCCESS)
 
     def test_create_picture_successfully(self, authorized_client):
         client = authorized_client
@@ -190,3 +148,36 @@ class TestPicturesAPI:
             assert_response_matches_expected(response, code=StatusCodes.INTERNAL_SERVER_ERROR,
                                              status=ResponseConstants.FAILURE,
                                              message=ResponseConstants.DELETE_PICTURE_FAIL)
+
+    def test_get_home_pictures_fails_on_internal_error(self, client):
+        error_mock = mock.Mock()
+        error_mock.side_effect = Exception
+
+        with patch.object(FavouritePicturesGateway, 'get_all', error_mock):
+            response = send_get_home_pictures(client)
+            assert_response_matches_expected(response, code=StatusCodes.INTERNAL_SERVER_ERROR,
+                                             status=ResponseConstants.FAILURE,
+                                             message=ResponseConstants.GET_FAVOURITE_PICTURES_FAIL)
+
+    def test_update_home_pictures_and_get_them_successfully(self, authorized_client, client):
+        stub_picture2 = stub_picture.copy()
+        stub_picture2['title'] = 'Damn skyr has a lot of protein'
+        pictures = [stub_picture, stub_picture2]
+        picture_titles = [stub_picture['title'], stub_picture2['title']]
+
+        create_category_and_send_post_picture_request(client, stub_picture, stubbed_category)
+        send_post_picture_request(authorized_client, stub_picture2)
+
+        response = send_update_home_pictures(authorized_client, pictures)
+        assert_response_matches_expected(response, code=StatusCodes.SUCCESSFULLY_CREATED,
+                                         status=ResponseConstants.SUCCESS,
+                                         message=ResponseConstants.UPDATE_FAVOURITE_PICTURES_SUCCESS)
+
+        response = send_get_home_pictures(client)
+
+        assert len(response['json']) == 2
+        assert response['json'][0]['title'] in picture_titles
+        assert response['json'][1]['title'] in picture_titles
+
+        assert_response_matches_expected(response, code=StatusCodes.SUCCESS, status=ResponseConstants.SUCCESS,
+                                         message=ResponseConstants.GET_FAVOURITE_PICTURES_SUCCESS)

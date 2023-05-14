@@ -31,7 +31,6 @@ def pytest_sessionstart():
     """This fixture puts the application in testing mode, creates the database and registers an admin user."""
     sys._called_from_test = True
 
-    create_testing_files()
     reset_database_and_setup_users()
 
 
@@ -39,7 +38,6 @@ def pytest_sessionfinish():
     for user in user_gateway.get_all():
         user_gateway.delete(user)
 
-    remove_testing_files()
     del sys._called_from_test
 
 
@@ -112,16 +110,6 @@ def reset_database_and_setup_users():
     user = user_gateway.get_by_username(admin_user_dict['username'])
     auth_token = User.encode_auth_token(user.id)
     user_context['token'] = auth_token
-
-
-def create_testing_files():
-    for file_path in Config.TESTING_FILES:
-        open(file_path, 'w').close()
-
-
-def remove_testing_files():
-    for file_path in Config.TESTING_FILES:
-        os.remove(file_path)
 
 
 def login_normal_user(test_client):
