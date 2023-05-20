@@ -3,8 +3,8 @@ import os
 
 
 class Config:
-    DEBUG = True
-    DEVELOPMENT_FLAG = True
+    DEBUG = False
+    DEVELOPMENT_FLAG = False
 
     STATIC_IP_ADDRESS = os.environ.get('STATIC_ADDRESS')
     BACKEND_EMAIL = os.environ.get('BACKEND_EMAIL')

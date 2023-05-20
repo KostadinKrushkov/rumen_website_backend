@@ -3,7 +3,7 @@ import logging
 from flask import Blueprint, request
 
 from project.common.constants import ResponseConstants, StatusCodes, EndpointPaths
-from project.common.decorators import jsonify_response
+from project.common.decorators import jsonify_response, log_execution_time
 from project.database.gateways.blog_gateway import BlogGateway
 from project.flask.blueprints.auth.authentication_utils import authorization_required
 from project.flask.blueprints.blog.blog_blueprint_utils import get_blog_dto_from_json
@@ -14,6 +14,7 @@ blog_blueprint = Blueprint('blog', __name__)
 gateway = BlogGateway()
 
 
+@log_execution_time
 def get_all_blogs():
     try:
         all_blogs = gateway.get_all()
@@ -31,6 +32,7 @@ def get_all_blogs():
 
 
 @jsonify_response
+@log_execution_time
 def get_blog():
     title = request.args.get('title')
     if not title:

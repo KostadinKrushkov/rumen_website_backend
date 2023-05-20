@@ -8,7 +8,8 @@ Technologies used for this project
 - Frontend Development: Angular (Typescript), HTML, CSS
 - Backend Development: Python3 + Flask + SQLAlchemy
 - SQL server + SQL Management Studio
-- Docker + docker-compose
+- Deployment: Docker + docker-compose
+- HTTP/WSGI servers: Nginx/Gunicorn
 - Testing: mostly integration tests with pytest, and some unit testing
 
 ---

@@ -29,7 +29,7 @@ def get_pictures():
         passed_cursor_picture = False if cursor_picture_title else True
         for picture in pictures_gateway.get_all():
             if not categories or picture.category in categories:
-                if not years or picture.created_at in years:
+                if not years or str(picture.created_at.year) in years:
                     if len(serialized_pictures) < limit and passed_cursor_picture:
                         serialized_pictures.append(picture.as_frontend_object().__dict__)
 

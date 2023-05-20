@@ -1,5 +1,6 @@
 - Write a proper compose file for the release on the target machine
 - Make sure that exporting and importing the containers would result in a valid network
+- Caching has problems with invalidating cache -> debug why
 
 Possible Improvements:
 - find out how to compress images on UI side -> research compression
