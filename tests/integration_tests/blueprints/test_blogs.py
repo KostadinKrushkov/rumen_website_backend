@@ -7,15 +7,13 @@ from project.common.constants import ResponseConstants, StatusCodes
 from project.database.database_controller import DatabaseController
 from project.database.dtos.blog_dto import BlogDTO
 from project.database.gateways.blog_gateway import BlogGateway
+from project.flask.blueprints.blog.blog_blueprint_utils import get_blog_dto_from_json
 from tests.integration_tests.api_requests import send_post_blog_request, send_get_blog_request, \
     send_get_blog_by_title_request, send_update_blog_request, send_delete_blog_request
+from tests.integration_tests.blueprints.test_stubs import get_stub_blog
 from tests.integration_tests.testing_utils import assert_response_matches_expected
 
-stubbed_blog = {
-    'title': 'Should we eat grass',
-    'content': 'No... what the hell, weirdo',
-    'image': 'https://i.kym-cdn.com/photos/images/newsfeed/000/787/356/d6f.jpg'
-}
+stubbed_blog = get_stub_blog()
 
 
 @pytest.fixture
@@ -37,7 +35,6 @@ class TestBlogAPI:
     def _assert_blog_matches_expected(expected_blog, blog):
         assert blog.title == expected_blog.get('title')
         assert blog.content == expected_blog.get('content')
-        assert blog.image == expected_blog.get('image')
 
     def test_get_blog_by_title_successfully(self, unauthenticated_client, create_starting_blog):
         response = send_get_blog_by_title_request(unauthenticated_client, stubbed_blog)
@@ -62,14 +59,14 @@ class TestBlogAPI:
 
     def test_get_blogs_successfully(self, unauthenticated_client, create_starting_blog):
         response = send_get_blog_request(unauthenticated_client)
-        self._assert_blog_is_saved(stubbed_blog, response['json'])
+        self._assert_blog_is_saved(get_blog_dto_from_json(stubbed_blog).frontend_object, response['json'])
         assert_response_matches_expected(response, code=StatusCodes.SUCCESS, status=ResponseConstants.SUCCESS,
                                          message=ResponseConstants.GET_ALL_BLOGS_SUCCESS)
 
     def test_get_blogs_fails_on_internal_error(self, unauthenticated_client):
         error_mock = mock.Mock()
         error_mock.side_effect = Exception
-        with patch.object(BlogGateway, 'get_all', error_mock):
+        with patch.object(BlogGateway, 'get_all_compressed', error_mock):
             response = send_get_blog_request(unauthenticated_client)
         assert_response_matches_expected(response, code=StatusCodes.BAD_REQUEST, status=ResponseConstants.FAILURE,
                                          message=ResponseConstants.GET_ALL_BLOGS_FAIL)

@@ -57,7 +57,7 @@ class PictureGateway(BaseGateway):
         sql = self._get_sql_for_picture_title(title)
         found_picture = self.db_controller.execute_get_response(sql)
         picture_dto = self.dto_class.from_row(found_picture)
-        return picture_dto.frontend_object if picture_dto is not None else None
+        return picture_dto if picture_dto is not None else None
 
     @lru_cache(maxsize=None)
     def get_all(self):

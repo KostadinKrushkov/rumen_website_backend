@@ -28,4 +28,4 @@ class CategoryDTO(BaseDTO):
     def frontend_object(self):
         self.enabled = self.enabled == 1
         self.is_subcategory = self.is_subcategory == 1
-        return self
+        return super().frontend_object

@@ -79,9 +79,11 @@ def get_picture():
     if not title:
         return get_pictures()
     try:
-        serialized_picture = pictures_gateway.get_by_title(title)
-        if serialized_picture is None:
+        picture_dto = pictures_gateway.get_by_title(title)
+        if picture_dto is None:
             raise PictureNotFound()
+
+        serialized_picture = picture_dto.frontend_object
         response = BasicResponse(status=ResponseConstants.SUCCESS,
                                  message=ResponseConstants.GET_PICTURE_BY_TITLE_SUCCESS,
                                  status_code=StatusCodes.SUCCESS,

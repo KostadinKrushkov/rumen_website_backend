@@ -18,7 +18,8 @@ gateway = CategoryGateway()
 
 
 def get_category_by_name(category_name):
-    return gateway.get_by_name(category_name)
+    category_dto = gateway.get_by_name(category_name)
+    return category_dto.frontend_object if category_dto else category_dto
 
 
 def get_categories(enabled_only):
@@ -52,10 +53,9 @@ def get_category():
         return get_categories(enabled_only)
 
     try:
-        category = get_category_by_name(name)
-        if category is None:
+        serialized_category = get_category_by_name(name)
+        if serialized_category is None:
             raise CategoryNotFound()
-        serialized_category = category.__dict__
         response = BasicResponse(status=ResponseConstants.SUCCESS,
                                  message=ResponseConstants.GET_CATEGORY_BY_NAME_SUCCESS,
                                  status_code=StatusCodes.SUCCESS,

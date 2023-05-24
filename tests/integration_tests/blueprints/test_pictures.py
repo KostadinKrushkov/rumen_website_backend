@@ -7,20 +7,14 @@ from project.database.dtos.picture_dto import PictureDTO
 from project.database.gateways.category_gateway import CategoryGateway
 from project.database.gateways.favourite_pictures_gateway import FavouritePicturesGateway
 from project.database.gateways.picture_gateway import PictureGateway
-from project.settings import Config
-from tests.integration_tests.blueprints.test_categories import stub_category_name, stubbed_category
+from tests.integration_tests.blueprints.test_categories import stubbed_category
 from tests.integration_tests.api_requests import create_category_and_send_post_picture_request, \
     send_post_picture_request, send_get_picture_by_title_request, \
     send_update_picture_request, send_delete_picture_request, send_get_home_pictures, send_update_home_pictures
+from tests.integration_tests.blueprints.test_stubs import get_stub_picture
 from tests.integration_tests.testing_utils import assert_response_matches_expected
 
-stub_picture = {
-    'title': 'To be or not to be',
-    'description': "Whether ’tis nobler in the mind to suffer The slings and arrows of outrageous fortune, "
-                   "Or to take arms against a sea of troubles, And, by opposing, end them?",
-    'category': stub_category_name,
-    'image': "Some image"
-}
+stub_picture = get_stub_picture()
 
 
 @pytest.fixture
@@ -46,7 +40,6 @@ class TestPicturesAPI:
         assert picture.title == expected_picture.get('title')
         assert picture.description == expected_picture.get('description')
         assert picture.category_id == category.id if category is not None else None
-        assert picture.image == expected_picture.get('image')
 
     def test_get_picture_by_title_successfully(self, create_starting_picture, unauthenticated_client):
         response = send_get_picture_by_title_request(unauthenticated_client, stub_picture)

@@ -14,6 +14,7 @@ class BlogGateway(BaseGateway):
 
     def clear_cache(self):
         self.get_all.cache_clear()
+        self.get_all_compressed.cache_clear()
 
     def save(self, blog):
         super(BlogGateway, self).save(blog)

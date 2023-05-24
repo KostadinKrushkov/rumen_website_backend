@@ -33,7 +33,7 @@ class CategoryGateway(BaseGateway):
     def get_by_name(self, name):
         sql = self._get_sql_for_category_name(name)
         category_result = self.db_controller.execute_get_response(sql)
-        return self.dto_class(**category_result[0]._mapping).frontend_object if category_result else None
+        return self.dto_class(**category_result[0]._mapping) if category_result else None
 
     def get_by_id(self, category_id):
         sql = self._get_sql_by_category_id(category_id)

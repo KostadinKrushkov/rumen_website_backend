@@ -24,8 +24,8 @@ def get_picture_dto_from_json(picture_json):
     return PictureDTO(
         title=picture_json['title'],
         description=picture_json['description'],
-        category_id=int(category.id),
-        category=category.name,
+        category_id=int(category['id']),
+        category=category['name'],
         image_format=image_format,
         image=image
     )

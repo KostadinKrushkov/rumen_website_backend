@@ -8,15 +8,10 @@ from project.database.dtos.category_dto import CategoryDTO
 from project.database.gateways.category_gateway import CategoryGateway
 from tests.integration_tests.api_requests import send_post_category_request, send_get_category_by_name_request, \
     send_update_category_request, send_delete_category_request
+from tests.integration_tests.blueprints.test_stubs import get_stub_category
 from tests.integration_tests.testing_utils import assert_response_matches_expected
 
-stub_category_name = 'Category 1'
-stubbed_category = {
-    'name': stub_category_name,
-    'weight': 1,
-    'enabled': True,
-    'is_subcategory': False
-}
+stubbed_category = get_stub_category()
 
 
 @pytest.fixture
