@@ -1,3 +1,4 @@
+from project.common.decorators import lazy_property
 from project.database.dtos.base_dto import BaseDTO
 
 
@@ -23,7 +24,8 @@ class CategoryDTO(BaseDTO):
             id=category_dict.get('id'),
         )
 
-    def as_frontend_object(self):
+    @lazy_property
+    def frontend_object(self):
         self.enabled = self.enabled == 1
         self.is_subcategory = self.is_subcategory == 1
         return self

@@ -5,6 +5,19 @@ import datetime
 from flask import make_response, jsonify
 
 
+def lazy_property(func):
+    """Decorator for lazy properties."""
+
+    property_name = '_' + func.__name__
+
+    @property
+    def lazy_property_wrapper(self):
+        if not hasattr(self, property_name):
+            setattr(self, property_name, func(self))
+        return getattr(self, property_name)
+    return lazy_property_wrapper
+
+
 def disable_during_tests(func):
 
     def wrapper(*args, **kwargs):

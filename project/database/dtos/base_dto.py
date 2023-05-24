@@ -1,6 +1,8 @@
 import json
 import datetime
 
+from project.common.decorators import lazy_property
+
 
 class BaseDTO:
     def toJSON(self):
@@ -13,5 +15,7 @@ class BaseDTO:
         else:
             return value.__dict__
 
-    def as_frontend_object(self):
-        return self
+    @lazy_property
+    def frontend_object(self):
+        dict_params = self.__dict__
+        return {key: value for key, value in dict_params.items() if not key.startswith('_')}

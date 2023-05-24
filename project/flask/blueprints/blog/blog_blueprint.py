@@ -9,16 +9,32 @@ from project.flask.blueprints.auth.authentication_utils import authorization_req
 from project.flask.blueprints.blog.blog_blueprint_utils import get_blog_dto_from_json
 from project.flask.blueprints.blog.blog_exceptions import BlogNotFound, BlogMissingTitle, DuplicateBlogTitle
 from project.flask.blueprints.response_objects import BasicResponse
+from project.settings import Config
 
 blog_blueprint = Blueprint('blog', __name__)
 gateway = BlogGateway()
 
 
 @log_execution_time
-def get_all_blogs():
+def get_all_blogs(compressed=True):
+    cursor_blog_title = request.args.get('cursor_blog_title', '')
+    limit = int(request.args.get('limit', Config.NUM_ITEMS_TO_EXTEND_LOAD))
+
     try:
-        all_blogs = gateway.get_all()
-        serialized_blogs = [blog.__dict__ for blog in all_blogs]
+        if compressed:
+            all_blogs = gateway.get_all_compressed()
+        else:
+            all_blogs = gateway.get_all()
+
+        serialized_blogs = []
+        passed_cursor_blog = False if cursor_blog_title else True
+        for blog in all_blogs:
+            if len(serialized_blogs) < limit and passed_cursor_blog:
+                serialized_blogs.append(blog.frontend_object)
+
+            if blog.title == cursor_blog_title:
+                passed_cursor_blog = True
+
         response = BasicResponse(status=ResponseConstants.SUCCESS,
                                  message=ResponseConstants.GET_ALL_BLOGS_SUCCESS,
                                  status_code=StatusCodes.SUCCESS,
@@ -33,7 +49,7 @@ def get_all_blogs():
 
 @jsonify_response
 @log_execution_time
-def get_blog():
+def get_blogs():
     title = request.args.get('title')
     if not title:
         return get_all_blogs()
@@ -41,7 +57,7 @@ def get_blog():
         blog = gateway.get_by_title(title)
         if blog is None:
             raise BlogNotFound()
-        serialized_blog = blog.__dict__
+        serialized_blog = blog.frontend_object
         response = BasicResponse(status=ResponseConstants.SUCCESS,
                                  message=ResponseConstants.GET_BLOG_BY_TITLE_SUCCESS,
                                  status_code=StatusCodes.SUCCESS,
@@ -137,7 +153,7 @@ def delete_blog():
     return response
 
 
-blog_blueprint.add_url_rule(EndpointPaths.BLOG, view_func=get_blog, methods=['GET'])
+blog_blueprint.add_url_rule(EndpointPaths.BLOG, view_func=get_blogs, methods=['GET'])
 blog_blueprint.add_url_rule(EndpointPaths.BLOG, view_func=add_blog, methods=['POST'])
 blog_blueprint.add_url_rule(EndpointPaths.BLOG, view_func=update_blog, methods=['PUT'])
 blog_blueprint.add_url_rule(EndpointPaths.BLOG, view_func=delete_blog, methods=['DELETE'])

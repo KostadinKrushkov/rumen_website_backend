@@ -1,8 +1,10 @@
+from copy import copy
 from functools import lru_cache
 
 from project.common.constants import SQLConstants
 from project.database.dtos.picture_dto import PictureDTO
 from project.database.gateways.base_gateway import BaseGateway
+from project.flask.blueprints.picture.picture_blueprint_utils import compress_image
 from project.flask.blueprints.picture.picture_exceptions import DuplicatePictureTitle
 
 
@@ -12,14 +14,22 @@ class PictureGateway(BaseGateway):
 
     def clear_cache(self):
         self.get_all.cache_clear()
+        self.get_all_compressed.cache_clear()
         self.get_distinct_picture_years.cache_clear()
 
     def save(self, picture):
         super(PictureGateway, self).save(picture)
 
         try:
-            sql = self._insert_sql_for_picture(picture)
-            return self.db_controller.execute_get_row_count(sql) == 1
+            sql = self._insert_sql_for_picture()
+            picture_data = {
+                'title': picture.title,
+                'description': picture.description,
+                'category_id': picture.category_id,
+                'image_format': picture.image_format,
+                'image': picture.image,
+            }
+            return self.db_controller.execute_get_row_count(sql, **picture_data) == 1
         except Exception as e:
             if SQLConstants.DUPLICATE_KEY_ERROR in str(e):
                 raise DuplicatePictureTitle()
@@ -28,8 +38,15 @@ class PictureGateway(BaseGateway):
     def update(self, picture):
         super(PictureGateway, self).update(picture)
 
-        sql = self._update_sql_for_picture(picture)
-        return self.db_controller.execute_get_row_count(sql) == 1
+        sql = self._update_sql_for_picture()
+        picture_data = {
+            'title': picture.title,
+            'description': picture.description,
+            'category_id': picture.category_id,
+            'image_format': picture.image_format,
+            'image': picture.image,
+        }
+        return self.db_controller.execute_get_row_count(sql, **picture_data) == 1
 
     @lru_cache()
     def get_distinct_picture_years(self):
@@ -40,7 +57,7 @@ class PictureGateway(BaseGateway):
         sql = self._get_sql_for_picture_title(title)
         found_picture = self.db_controller.execute_get_response(sql)
         picture_dto = self.dto_class.from_row(found_picture)
-        return picture_dto.as_frontend_object() if picture_dto is not None else None
+        return picture_dto.frontend_object if picture_dto is not None else None
 
     @lru_cache(maxsize=None)
     def get_all(self):
@@ -50,33 +67,14 @@ class PictureGateway(BaseGateway):
             picture_results.append(self.dto_class(**picture._mapping))
         return picture_results
 
-    # deprecated in favor of caching all and filtering in code
-    def get_pictures(self, categories, years, limit=None, cursor_picture_title=None):
-        conditions = ['c.enabled = 1']
-
-        if categories:
-            category_names = ','.join(f"'{category_name}'" for category_name in categories)
-            conditions.append(f'c.name in ({category_names})')
-        if years:
-            conditions.append(f'YEAR(p.created_at) IN ({",".join(years)})')
-        if cursor_picture_title:
-            select_cursor_picture_sql = f"(SELECT id FROM {self.table_name} WHERE title = '{cursor_picture_title}')"
-            conditions.append(f'p.created_at < (SELECT created_at FROM {self.table_name} WHERE id = {select_cursor_picture_sql})')
-
-        limit_clause = f'TOP {limit}' if limit else ''
-        where_clause = f'WHERE {conditions[0]} '
-        for condition in conditions[1:]:
-            where_clause += f' AND {condition}'
-
-        sql = f"""
-SELECT {limit_clause} p.title, p.description, p.category_id, c.name as category, p.image, p.created_at, p.updated_at FROM {self.table_name} p
-JOIN category c on c.id = p.category_id
-{where_clause}
-ORDER BY p.created_at DESC
-"""
-
-        for picture in self.db_controller.execute_get_response(sql):
-            yield self.dto_class(**picture._mapping)
+    @lru_cache(maxsize=None)
+    def get_all_compressed(self):
+        picture_results = []
+        for picture in self.get_all():
+            copy_picture = copy(picture)
+            copy_picture.image = compress_image(copy_picture.image_format, copy_picture.image)
+            picture_results.append(copy_picture)
+        return picture_results
 
     def delete(self, picture):
         super(PictureGateway, self).delete(picture)
@@ -90,16 +88,24 @@ ORDER BY p.created_at DESC
         sql = self._delete_sql_by_picture_title(title)
         return self.db_controller.execute_get_row_count(sql) == 1
 
-    def _insert_sql_for_picture(self, picture):
+    @classmethod
+    def _insert_sql_for_picture(cls):
         return f"""
-INSERT INTO picture (title, description, category_id, image, created_at, updated_at)
-values ('{picture.title}', '{picture.description}', {picture.category_id}, '{picture.image}', GETDATE(), GETDATE());
+INSERT INTO {cls.table_name} (title, description, category_id, image_format, image, created_at, updated_at)
+values (:title, :description, :category_id, :image_format, :image, GETDATE(), GETDATE());
 """
 
-    def _update_sql_for_picture(self, picture):
+    @classmethod
+    def _update_sql_for_picture(cls):
         return f"""
-UPDATE {self.table_name} 
-SET description = '{picture.description}', category_id = '{picture.category_id}', image = '{picture.image}', updated_at = GETDATE() where title = '{picture.title}'
+UPDATE {cls.table_name} 
+SET title = :title,
+    description = :description,
+    category_id = :category_id,
+    image_format = :image_format,
+    image = :image,
+    updated_at = GETDATE()
+WHERE title = :title
 """
 
     def _get_sql_distinct_years_from_pictures(self):
@@ -107,12 +113,14 @@ SET description = '{picture.description}', category_id = '{picture.category_id}'
 
     def _get_sql_for_all_pictures(self):
         return f"""
-SELECT p.title, p.description, p.category_id, c.name as category, p.image, p.created_at, p.updated_at, p.id FROM {self.table_name} p
-JOIN category c ON c.id = p.category_id"""
+SELECT p.title, p.description, p.category_id, c.name as category, p.image_format, p.image, p.created_at, p.updated_at, p.id FROM {self.table_name} p
+JOIN category c ON c.id = p.category_id
+ORDER BY p.created_at ASC
+"""
 
     def _get_sql_for_picture_title(self, picture_title):
         return f"""
-SELECT p.title, p.description, p.category_id, c.name as category, p.image, p.created_at, p.updated_at 
+SELECT p.title, p.description, p.category_id, c.name as category, p.image_format, p.image, p.created_at, p.updated_at 
 FROM {self.table_name} p
 JOIN category c ON c.id = p.category_id
 WHERE title = '{picture_title}'

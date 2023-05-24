@@ -27,9 +27,9 @@ class DatabaseController:
 
     @staticmethod
     @sanitize_sql
-    def execute_get_row_count(sql):
+    def execute_get_row_count(sql, *args, **kwargs):
         try:
-            cursor = initialize_engine().execute(sql)
+            cursor = initialize_engine().execute(sql, *args, **kwargs)
         except ResourceClosedError:  # object doesn't return any data
             return
         return cursor.rowcount

@@ -28,7 +28,7 @@ class Config:
     EXPIRATION_DATETIME_DELTA = datetime.timedelta(days=31, seconds=3)
     PERMANENT_SESSION_LIFETIME = datetime.timedelta(days=31)  # The length of a user log in session
     REMEMBER_COOKIE_DURATION = PERMANENT_SESSION_LIFETIME
-    NUM_PICTURES_TO_EXTEND_LOAD = 9
+    NUM_ITEMS_TO_EXTEND_LOAD = 9
     GMAIL_PORT = 465
 
     SESSION_COOKIE_SECURE = True

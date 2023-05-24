@@ -1,9 +1,11 @@
+from copy import copy
 from functools import lru_cache
 
 from project.common.constants import SQLConstants
 from project.database.dtos.blog_dto import BlogDTO
 from project.database.gateways.base_gateway import BaseGateway
 from project.flask.blueprints.blog.blog_exceptions import DuplicateBlogTitle
+from project.flask.blueprints.picture.picture_blueprint_utils import compress_image
 
 
 class BlogGateway(BaseGateway):
@@ -16,9 +18,16 @@ class BlogGateway(BaseGateway):
     def save(self, blog):
         super(BlogGateway, self).save(blog)
 
-        sql = self._insert_sql_for_blog(blog)
+        sql = self._insert_sql_for_blog()
+        blog_params = {
+            'title': blog.title,
+            'content': blog.content,
+            'image_format': blog.image_format,
+            'image': blog.image,
+        }
+
         try:
-            return self.db_controller.execute_get_row_count(sql) == 1
+            return self.db_controller.execute_get_row_count(sql, **blog_params) == 1
         except Exception as e:
             if SQLConstants.DUPLICATE_KEY_ERROR in str(e):
                 raise DuplicateBlogTitle(e)
@@ -27,8 +36,15 @@ class BlogGateway(BaseGateway):
     def update(self, blog):
         super(BlogGateway, self).update(blog)
 
-        sql = self._update_sql_for_blog(blog)
-        return self.db_controller.execute_get_row_count(sql) == 1
+        sql = self._update_sql_for_blog()
+        blog_params = {
+            'title': blog.title,
+            'content': blog.content,
+            'image_format': blog.image_format,
+            'image': blog.image,
+        }
+
+        return self.db_controller.execute_get_row_count(sql, **blog_params) == 1
 
     def get_by_title(self, title):
         sql = self._get_sql_for_blog_title(title)
@@ -43,30 +59,44 @@ class BlogGateway(BaseGateway):
             blog_results.append(self.dto_class(**blog))
         return blog_results
 
+    @lru_cache(maxsize=None)
+    def get_all_compressed(self):
+        blog_results = []
+
+        for blog in self.get_all():
+            copy_blog = copy(blog)
+            copy_blog.image = compress_image(copy_blog.image_format, copy_blog.image)
+            blog_results.append(copy_blog)
+        return blog_results
+
     def delete_by_title(self, title):
         super(BlogGateway, self).delete(title)
 
         sql = self._delete_sql_by_blog_title(title)
         return self.db_controller.execute_get_row_count(sql) == 1
 
-    def _insert_sql_for_blog(self, blog):
+    @classmethod
+    def _insert_sql_for_blog(cls):
         return f"""
-INSERT INTO dbo.{self.table_name} (title, content, image, created_at, updated_at)
-VALUES ('{blog.title}', '{blog.content}', '{blog.image}', GETDATE(), GETDATE());"""
+INSERT INTO dbo.{cls.table_name} (title, content, image_format, image, created_at, updated_at)
+VALUES (:title, :content, :image_format, :image, GETDATE(), GETDATE());"""
 
-    def _update_sql_for_blog(self, blog):
+    @classmethod
+    def _update_sql_for_blog(cls):
         return f"""
-UPDATE dbo.{self.table_name} 
-SET content = '{blog.content}', image = '{blog.image}', updated_at = GETDATE()
-WHERE title = '{blog.title}';
+UPDATE dbo.{cls.table_name} 
+SET content = :content, image_format = :image_format, image = :image, updated_at = GETDATE()
+WHERE title = :title ;
 """
 
     def _get_sql_for_all_blogs(self):
-        return f"""SELECT title, content, image, created_at, updated_at FROM dbo.{self.table_name} ORDER BY created_at"""
+        return f"""
+SELECT title, content, image_format, image, created_at, updated_at FROM dbo.{self.table_name} 
+ORDER BY created_at ASC"""
 
     def _get_sql_for_blog_title(self, blog_title):
         return f"""
-SELECT title, content, image, created_at, updated_at FROM dbo.{self.table_name}  
+SELECT title, content, image_format, image, created_at, updated_at FROM dbo.{self.table_name}  
 WHERE title = '{blog_title}'
 """
 

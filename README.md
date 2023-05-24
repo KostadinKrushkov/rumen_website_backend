@@ -24,5 +24,6 @@ Technologies used for this project
 
 # To build and run everything together
 - To update the UI refer to the beforementioned UI repository. In this repository the release version of the angular_frontend_application image needs to be bumped (i.e. image: 'rocazzar/rumen-plamenov-angular-app:v1.0-release').  
+- If any new packages were added execute "pip3 freeze > requirements.txt"
 - docker compose build  -> to build the environments, volumes and images
 - docker compose up -d

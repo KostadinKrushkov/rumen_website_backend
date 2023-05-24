@@ -1,5 +1,5 @@
 import logging
-
+import json
 from flask import Blueprint, request
 
 from project.common.constants import ResponseConstants, StatusCodes, EndpointPaths
@@ -22,16 +22,16 @@ def get_pictures():
     categories = request.args.getlist('category')
     years = request.args.getlist('year')
     cursor_picture_title = request.args.get('cursor_picture_title', '')
-    limit = int(request.args.get('limit', Config.NUM_PICTURES_TO_EXTEND_LOAD))
+    limit = int(request.args.get('limit', Config.NUM_ITEMS_TO_EXTEND_LOAD))
 
     try:
         serialized_pictures = []
         passed_cursor_picture = False if cursor_picture_title else True
-        for picture in pictures_gateway.get_all():
+        for picture in pictures_gateway.get_all_compressed():
             if not categories or picture.category in categories:
                 if not years or str(picture.created_at.year) in years:
                     if len(serialized_pictures) < limit and passed_cursor_picture:
-                        serialized_pictures.append(picture.as_frontend_object().__dict__)
+                        serialized_pictures.append(picture.frontend_object)
 
             if picture.title == cursor_picture_title:
                 passed_cursor_picture = True
@@ -51,13 +51,19 @@ def get_pictures():
 @log_execution_time
 def get_home_pictures():
     try:
-        favourite_picture_dtos = [picture.as_frontend_object().__dict__ for picture in
-                                  favourite_pictures_gateway.get_all()]
+        compression_on = request.args.get('compression_on', default=False, type=json.loads)
+
+        if compression_on:
+            favourite_picture_dtos = favourite_pictures_gateway.get_all_compressed()
+        else:
+            favourite_picture_dtos = favourite_pictures_gateway.get_all()
+
+        serialized_favourite_pictures = [picture.frontend_object for picture in favourite_picture_dtos]
 
         response = BasicResponse(status=ResponseConstants.SUCCESS,
                                  message=ResponseConstants.GET_FAVOURITE_PICTURES_SUCCESS,
                                  status_code=StatusCodes.SUCCESS,
-                                 json=favourite_picture_dtos)
+                                 json=serialized_favourite_pictures)
     except Exception:
         response = BasicResponse(status=ResponseConstants.FAILURE,
                                  message=ResponseConstants.GET_FAVOURITE_PICTURES_FAIL,
@@ -73,10 +79,9 @@ def get_picture():
     if not title:
         return get_pictures()
     try:
-        picture = pictures_gateway.get_by_title(title)
-        if picture is None:
+        serialized_picture = pictures_gateway.get_by_title(title)
+        if serialized_picture is None:
             raise PictureNotFound()
-        serialized_picture = picture.__dict__
         response = BasicResponse(status=ResponseConstants.SUCCESS,
                                  message=ResponseConstants.GET_PICTURE_BY_TITLE_SUCCESS,
                                  status_code=StatusCodes.SUCCESS,
