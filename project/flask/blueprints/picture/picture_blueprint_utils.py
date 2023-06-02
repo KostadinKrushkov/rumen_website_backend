@@ -40,7 +40,16 @@ def compress_image(image_format, image, quality=80, max_size=1024):
     image_format = parse_image_format(image_format)
 
     pil_image = Image.open(image_bytes)
-    pil_image = pil_image.resize((max_size, max_size))
+
+    width_to_height = pil_image.width / pil_image.height
+
+    final_height = final_width = max_size
+    if width_to_height > 1:
+        final_width = max_size * width_to_height
+    else:
+        final_height = max_size * (1 / width_to_height)
+
+    pil_image = pil_image.resize((int(final_width), int(final_height)), Image.ANTIALIAS)
 
     output_buffer = io.BytesIO()
     pil_image.save(output_buffer, format=image_format, quality=quality)

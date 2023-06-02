@@ -49,7 +49,7 @@ def get_pictures():
 
 @jsonify_response
 @log_execution_time
-def get_home_pictures():
+def get_favourite_pictures():
     try:
         compression_on = request.args.get('compression_on', default=False, type=json.loads)
 
@@ -215,7 +215,7 @@ def delete_picture():
     return response
 
 
-picture_blueprint.add_url_rule(EndpointPaths.HOME_PICTURES, view_func=get_home_pictures, methods=['GET'])
+picture_blueprint.add_url_rule(EndpointPaths.HOME_PICTURES, view_func=get_favourite_pictures, methods=['GET'])
 picture_blueprint.add_url_rule(EndpointPaths.HOME_PICTURES, view_func=update_favourite_pictures, methods=['PUT'])
 picture_blueprint.add_url_rule(EndpointPaths.PICTURE_YEARS, view_func=get_picture_years, methods=['GET'])
 picture_blueprint.add_url_rule(EndpointPaths.PICTURE, view_func=get_picture, methods=['GET'])

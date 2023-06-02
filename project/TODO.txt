@@ -1,6 +1,5 @@
 - Write a proper compose file for the release on the target machine
 - Make sure that exporting and importing the containers would result in a valid network
-- Caching has problems with invalidating cache -> debug why
 
 Possible Improvements:
 - add api call to send email on forgotten password (perhaps 5 times a day max to avoid abuse)
@@ -41,6 +40,7 @@ X Remove the file handling for the favourite pictures in /home, add a separate t
 X Add caching for performance improvements
 X find out how to compress images on UI side -> research compression
 X find a way to store the picture as a blog/varbinary instead of base64 plain text -> would decrease storage and is considered the proper way to do it
-
+X Caching has problems with invalidating cache
+X Keep the aspect ratio when compressing the images
 
 ALT + SHIFT + G to put cursors on selected lines
